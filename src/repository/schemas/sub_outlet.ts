@@ -1,6 +1,7 @@
 import Joi from "joi";
 import { Schema } from "mongoose";
 import { ISubOutlet } from "./types";
+import { joiObj } from "./helper";
 
 export const SubOutletSchema = new Schema<ISubOutlet>(
   {
@@ -13,7 +14,7 @@ export const SubOutletSchema = new Schema<ISubOutlet>(
   { timestamps: true }
 );
 
-export const SubOutletObj = Joi.object({
+export const SubOutletObj = joiObj({
   name: Joi.string().required(),
   address: { type: Schema.Types.ObjectId, ref: "Address" },
   phoneNumber: Joi.number(),

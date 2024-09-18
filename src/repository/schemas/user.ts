@@ -1,8 +1,7 @@
 import Joi from "joi";
-import "joi-extract-type";
-
 import { Schema } from "mongoose";
 import { IUser } from "./types";
+import { joiObj } from "./helper";
 
 export const UserSchema = new Schema<IUser>(
   {
@@ -24,7 +23,7 @@ export const UserSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-export const userObj = Joi.object({
+export const userObj = joiObj({
   firstName: Joi.string().alphanum().trim().min(1).max(50).required(),
   lastName: Joi.string().alphanum().trim().min(1).max(50).required(),
   phoneNumber: Joi.number().required(),

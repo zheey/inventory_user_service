@@ -1,6 +1,7 @@
 import Joi from "joi";
 import { Schema } from "mongoose";
 import { IOrganization } from "./types";
+import { joiObj } from "./helper";
 
 export const OrganizationSchema = new Schema<IOrganization>(
   {
@@ -11,7 +12,7 @@ export const OrganizationSchema = new Schema<IOrganization>(
   { timestamps: true }
 );
 
-export const OrganizationObj = Joi.object({
+export const OrganizationObj = joiObj({
   name: Joi.string().required(),
   logo: Joi.string(),
   subOutlets: [{ type: Schema.Types.ObjectId, ref: "SubOutlet" }],

@@ -1,6 +1,7 @@
 import Joi from "joi";
 import { Schema } from "mongoose";
 import { IAddress } from "./types";
+import { joiObj } from "./helper";
 
 export const AddressSchema = new Schema<IAddress>(
   {
@@ -12,7 +13,7 @@ export const AddressSchema = new Schema<IAddress>(
   { timestamps: true }
 );
 
-export const Addressbj = Joi.object({
+export const Addressbj = joiObj({
   address: Joi.string().required().trim(),
   postalCode: Joi.string().alphanum().required().trim(),
   city: Joi.string().required().trim(),

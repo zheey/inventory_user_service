@@ -27,6 +27,6 @@ export const validatePayload = (
   const { error } = validator.validate(payload);
 
   if (error) {
-    return { status: 400, message: error.details };
+    return { status: 400, message: error.message };
   }
 };
