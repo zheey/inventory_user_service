@@ -1,11 +1,7 @@
 import jwt from "jsonwebtoken";
 import { SubOutlet, User } from "../repository/models";
 import bcrypt from "bcrypt";
-import {
-  checkPayloadAvailable,
-  setUserData,
-  validatePayload,
-} from "../utils/dao_utils";
+import { setUserData } from "../utils/dao_utils";
 import {
   IJWTPayload,
   IMongooseId,
@@ -19,14 +15,11 @@ import { userObj } from "../repository/schemas/user";
 const secret: any = process.env.AUTH_SECRET;
 const saltRounds: any = process.env.SALT_ROUNDS;
 
-export const createrNewUser = async (
+export const createrNewUserDAO = async (
   userParams: IUserParam,
   subOutletId: IMongooseId
 ): Promise<IDAOResponse> => {
   try {
-    checkPayloadAvailable(userParams);
-    validatePayload(userParams, userObj);
-
     const existingUser = await findUserWithinSubOutlet(
       {
         $or: [
@@ -37,7 +30,12 @@ export const createrNewUser = async (
       subOutletId
     );
     if (existingUser) {
-      return { status: 400, message: "Duplicate Email or Phone Number" };
+      return {
+        status: false,
+        statusCode: 400,
+        message: "Duplicate Email or Phone Number",
+        data: {},
+      };
     }
 
     const hash: any = await bcrypt.hash(userParams.password, saltRounds);
@@ -46,7 +44,12 @@ export const createrNewUser = async (
     const subOutlet = await SubOutlet.findById({ id: subOutletId });
 
     if (!subOutlet) {
-      return { status: 400, message: "Organization or Outlet doesn't exist" };
+      return {
+        status: false,
+        statusCode: 400,
+        message: "Organization or Outlet doesn't exist",
+        data: {},
+      };
     }
 
     userParams["subOutlets"] = [subOutlet.id];
@@ -64,16 +67,22 @@ export const createrNewUser = async (
     });
 
     return {
-      status: 200,
+      status: true,
+      statusCode: 200,
       message: "Authentication successful",
       data: { jwtPayload, token },
     };
   } catch (err) {
-    return { status: 500, message: "Server Unavailable" };
+    return {
+      status: false,
+      statusCode: 500,
+      message: "Server Unavailable",
+      data: {},
+    };
   }
 };
 
-export const userLogin = async ({
+export const userLoginDAO = async ({
   email,
   phoneNumber,
   password,
@@ -81,11 +90,21 @@ export const userLogin = async ({
 }: IUserLoginParam): Promise<IDAOResponse> => {
   try {
     if (!email && !phoneNumber) {
-      return { status: 400, message: "Email or Phone Number required" };
+      return {
+        status: false,
+        statusCode: 400,
+        message: "Email or Phone Number required",
+        data: {},
+      };
     }
 
     if (!subOutletId) {
-      return { status: 400, message: "Suboutlet ID required" };
+      return {
+        status: false,
+        statusCode: 400,
+        message: "Suboutlet ID required",
+        data: {},
+      };
     }
 
     const user = await findUserWithinSubOutlet(
@@ -96,12 +115,22 @@ export const userLogin = async ({
     );
 
     if (!user) {
-      return { status: 400, message: "User not found" };
+      return {
+        status: false,
+        statusCode: 400,
+        message: "User not found",
+        data: {},
+      };
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return { status: 400, message: "Incorrect credentials" };
+      return {
+        status: false,
+        statusCode: 400,
+        message: "Incorrect credentials",
+        data: {},
+      };
     }
 
     const jwtPayload: IJWTPayload = setUserData(
@@ -115,11 +144,17 @@ export const userLogin = async ({
     });
 
     return {
-      status: 200,
+      status: true,
+      statusCode: 200,
       message: "Authentication successful",
       data: { jwtPayload, token },
     };
   } catch (err) {
-    return { status: 500, message: "Server Unavailable" };
+    return {
+      status: false,
+      statusCode: 500,
+      message: "Server Unavailable",
+      data: {},
+    };
   }
 };

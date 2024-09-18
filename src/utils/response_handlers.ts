@@ -33,7 +33,8 @@ export const sendErrorResponse = async (
 export const sendSuccessResponse = async (
   res: Response,
   content: ContentType,
-  message: MessageType
+  message: MessageType,
+  statusCode?: number
 ) => {
   let responseData = { message: "", param: "" };
   if (typeof message == "string") {
@@ -46,5 +47,5 @@ export const sendSuccessResponse = async (
   data["success"] = true;
   data["message"] = responseData;
   data["data"] = content;
-  res.status(200).json(data);
+  res.status(statusCode || 200).json(data);
 };

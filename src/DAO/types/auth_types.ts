@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import { IAddress } from "../../repository/schemas/types";
 
-export type IMongooseId = string | Types.ObjectId;
+export type IMongooseId = string | Types.ObjectId | string[] | undefined;
 export type IUserRole = "SUPERADMIN" | "ADMIN" | "SALES_REP" | "CUSTOMER";
 export type IEmail = string;
 export type IPhoneNumber = number;

@@ -14,7 +14,7 @@ export const SubOutletSchema = new Schema<ISubOutlet>(
   { timestamps: true }
 );
 
-export const SubOutletObj = joiObj({
+export const subOutletObj = joiObj({
   name: Joi.string().required(),
   address: { type: Schema.Types.ObjectId, ref: "Address" },
   phoneNumber: Joi.number(),

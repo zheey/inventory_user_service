@@ -1,6 +1,8 @@
 import Joi from "joi";
+import { Response } from "express";
 import { IMongooseId, IUserRole } from "../DAO/types/auth_types";
 import { IPayload } from "../DAO/types/dao_response_types";
+import { sendErrorResponse } from "./response_handlers";
 
 export const setUserData = (
   userId: IMongooseId,
@@ -14,19 +16,20 @@ export const setUserData = (
   };
 };
 
-export const checkPayloadAvailable = (payload: IPayload) => {
+export const checkPayloadAvailable = (res: Response, payload: IPayload) => {
   if (Object.keys(payload).length === 0) {
-    return { status: 400, message: "Missing payload data" };
+    return sendErrorResponse(res, {}, "Missing payload data", 400);
   }
 };
 
 export const validatePayload = (
+  res: Response,
   payload: IPayload,
   validator: Joi.ObjectSchema<any>
 ) => {
   const { error } = validator.validate(payload);
 
   if (error) {
-    return { status: 400, message: error.message };
+    return sendErrorResponse(res, {}, error.message, 400);
   }
 };

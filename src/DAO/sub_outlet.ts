@@ -1,22 +1,22 @@
 import { Organization, SubOutlet } from "../repository/models";
-import { SubOutletObj } from "../repository/schemas/sub_outlet";
 import { ISubOutlet } from "../repository/schemas/types";
-import { checkPayloadAvailable, validatePayload } from "../utils/dao_utils";
 import { IDAOResponse } from "./types/dao_response_types";
 
-export const createNewSubOutlet = async (
+export const createNewSubOutletDAO = async (
   subOutletParams: ISubOutlet
 ): Promise<IDAOResponse> => {
   try {
-    checkPayloadAvailable(subOutletParams);
-    validatePayload(subOutletParams, SubOutletObj);
-
     const organization = await Organization.findById({
       id: subOutletParams.organizationId,
     });
 
     if (!organization) {
-      return { status: 400, message: "Organization does not exist" };
+      return {
+        status: false,
+        statusCode: 400,
+        message: "Organization does not exist",
+        data: {},
+      };
     }
 
     const existingSuboutlet = await SubOutlet.findOne({
@@ -24,7 +24,12 @@ export const createNewSubOutlet = async (
     });
 
     if (existingSuboutlet) {
-      return { status: 400, message: "Suboutlet already exist" };
+      return {
+        status: false,
+        statusCode: 400,
+        message: "Suboutlet already exist",
+        data: {},
+      };
     }
 
     const newSuboutlet = await Organization.create(subOutletParams);
@@ -38,11 +43,17 @@ export const createNewSubOutlet = async (
     );
 
     return {
-      status: 200,
+      status: true,
+      statusCode: 200,
       message: "Suboutlet successfully created",
       data: newSuboutlet,
     };
   } catch (err) {
-    return { status: 500, message: "Server Unavailable" };
+    return {
+      status: false,
+      statusCode: 500,
+      message: "Server Unavailable",
+      data: {},
+    };
   }
 };
