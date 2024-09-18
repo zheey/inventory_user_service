@@ -1,19 +1,20 @@
 import Joi from "joi";
 import { Schema } from "mongoose";
-
-export interface IAddress {
-  address: { type: string; required: true };
-  postalCode: { type: string; required: true };
-  city: { type: string; required: true };
-  country: { type: string; required: true };
-}
+import { IAddress } from "./types";
 
 export const AddressSchema = new Schema<IAddress>(
   {
-    address: Joi.string().trim(),
-    postalCode: Joi.string().alphanum().trim(),
-    city: Joi.string().trim(),
-    country: Joi.string().trim(),
+    address: { type: String, required: true },
+    postalCode: { type: String, required: true },
+    city: { type: String, required: true },
+    country: { type: String, required: true },
   },
   { timestamps: true }
 );
+
+export const Addressbj = Joi.object({
+  address: Joi.string().required().trim(),
+  postalCode: Joi.string().alphanum().required().trim(),
+  city: Joi.string().required().trim(),
+  country: Joi.string().required().trim(),
+});

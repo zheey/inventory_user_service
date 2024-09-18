@@ -1,41 +1,40 @@
 import Joi from "joi";
+import "joi-extract-type";
 
-import { Schema, Types } from "mongoose";
-import { IAddress } from "./address";
-
-interface IUser {
-  firstName: { type: string; required: true };
-  lastName: { type: string; required: true };
-  phoneNumber: { type: Number; required: true };
-  email: { type: string; required: true };
-  password: { type: string; required: true };
-  addresses?: { type: IAddress[]; required: false };
-  role: { type: string; required: true };
-  isArchived?: { type: Boolean; required: false };
-  avatar?: { type: string };
-  organization: { type: Types.ObjectId[] };
-}
+import { Schema } from "mongoose";
+import { IUser } from "./types";
 
 export const UserSchema = new Schema<IUser>(
   {
-    firstName: Joi.string().alphanum().trim().min(3).max(50).required(),
-    lastName: Joi.string().alphanum().trim().min(3).max(50).required(),
-    phoneNumber: Joi.number().required(),
-    email: Joi.string().trim().email({ minDomainSegments: 2 }).required(),
-    password: Joi.string().required(),
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    phoneNumber: { type: Number, required: false, unique: true },
+    email: { type: String, required: false, unique: true },
+    password: { type: String, required: true },
     addresses: [{ type: Schema.Types.ObjectId, ref: "Address" }],
     role: {
-      type: Joi.string().trim(),
-      enum: ["SUPERADMIN", "ADMIN", "SALES_REP", "CUSTOMER"],
-      unique: true,
+      type: String,
       required: true,
+      enum: ["SUPERADMIN", "ADMIN", "SALES_REP", "CUSTOMER"],
     },
-    isArchived: {
-      type: Joi.boolean(),
-      default: false,
-    },
-    avatar: Joi.string(),
-    organization: [{ type: Schema.Types.ObjectId, ref: "Organization" }],
+    isArchived: { type: Boolean, required: false, default: false },
+    avatar: { type: String, required: false },
+    subOutlets: [{ type: Schema.Types.ObjectId, ref: "SubOutlet" }],
   },
   { timestamps: true }
 );
+
+export const userObj = Joi.object({
+  firstName: Joi.string().alphanum().trim().min(1).max(50).required(),
+  lastName: Joi.string().alphanum().trim().min(1).max(50).required(),
+  phoneNumber: Joi.number().required(),
+  email: Joi.string().trim().email({ minDomainSegments: 2 }).required(),
+  password: Joi.string().required(),
+  addresses: [{ type: Schema.Types.ObjectId, ref: "Address" }],
+  role: Joi.string()
+    .valid(["SUPERADMIN", "ADMIN", "SALES_REP", "CUSTOMER"])
+    .required(),
+  isArchived: Joi.boolean().default(false),
+  avatar: Joi.string(),
+  subOutlets: [{ type: Schema.Types.ObjectId, ref: "SubOutlet" }],
+});
