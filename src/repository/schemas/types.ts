@@ -4,7 +4,7 @@ import {
   IPassword,
   IPhoneNumber,
   IUserRole,
-} from "../../DAO/types/auth_types";
+} from "../../dao/types/auth_types";
 
 export interface IUser {
   firstName: string;

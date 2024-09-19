@@ -1,7 +1,7 @@
 import Joi from "joi";
 import { Response } from "express";
-import { IMongooseId, IUserRole } from "../DAO/types/auth_types";
-import { IPayload } from "../DAO/types/dao_response_types";
+import { IMongooseId, IUserRole } from "../dao/types/auth_types";
+import { IPayload } from "../dao/types/dao_response_types";
 import { sendErrorResponse } from "./response_handlers";
 
 export const setUserData = (
