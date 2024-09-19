@@ -1,14 +1,15 @@
 import { Request, Response } from "express";
-import { createNewOrganizationDAO } from "../DAO";
+import { createNewOutletDAO } from "../DAO";
 import {
   sendErrorResponse,
   sendSuccessResponse,
 } from "../utils/response_handlers";
 
-export const createOrganization = async (req: Request, res: Response) => {
+export const createOutlet = async (req: Request, res: Response) => {
   try {
-    const { status, statusCode, message, data } =
-      await createNewOrganizationDAO(req.body.organization, req.body.user);
+    const { status, statusCode, message, data } = await createNewOutletDAO(
+      req.body
+    );
 
     if (status) {
       return sendSuccessResponse(res, data, message, statusCode);

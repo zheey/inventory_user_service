@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { SubOutlet, User } from "../repository/models";
+import { Organization, Outlet, SuperUser, User } from "../repository/models";
 import bcrypt from "bcrypt";
 import { setUserData } from "../utils/dao_utils";
 import {
@@ -9,7 +9,7 @@ import {
   IUserParam,
 } from "./types/auth_types";
 import { IDAOResponse } from "./types/dao_response_types";
-import { findUserWithinSubOutlet } from "./helper";
+import { findUserWithinOutlet } from "./helper";
 import { userObj } from "../repository/schemas/user";
 
 const secret: any = process.env.AUTH_SECRET;
@@ -17,17 +17,17 @@ const saltRounds: any = process.env.SALT_ROUNDS;
 
 export const createrNewUserDAO = async (
   userParams: IUserParam,
-  subOutletId: IMongooseId
+  outletId: IMongooseId
 ): Promise<IDAOResponse> => {
   try {
-    const existingUser = await findUserWithinSubOutlet(
+    const existingUser = await findUserWithinOutlet(
       {
         $or: [
           { email: userParams.email },
           { phoneNumber: userParams.phoneNumber },
         ],
       },
-      subOutletId
+      outletId
     );
     if (existingUser) {
       return {
@@ -41,9 +41,9 @@ export const createrNewUserDAO = async (
     const hash: any = await bcrypt.hash(userParams.password, saltRounds);
     userParams.password = hash;
 
-    const subOutlet = await SubOutlet.findById({ id: subOutletId });
+    const outlet = await Outlet.findById({ id: outletId });
 
-    if (!subOutlet) {
+    if (!outlet) {
       return {
         status: false,
         statusCode: 400,
@@ -52,14 +52,14 @@ export const createrNewUserDAO = async (
       };
     }
 
-    userParams["subOutlets"] = [subOutlet.id];
+    userParams["outlets"] = [outlet.id];
 
     const newUser = await User.create(userParams);
 
     const jwtPayload: IJWTPayload = setUserData(
       newUser.id,
       newUser.role,
-      subOutletId
+      outletId
     );
 
     const token: string = jwt.sign(jwtPayload, secret, {
@@ -70,7 +70,7 @@ export const createrNewUserDAO = async (
       status: true,
       statusCode: 200,
       message: "Authentication successful",
-      data: { jwtPayload, token },
+      data: { user: jwtPayload, token },
     };
   } catch (err) {
     return {
@@ -86,7 +86,7 @@ export const userLoginDAO = async ({
   email,
   phoneNumber,
   password,
-  subOutletId,
+  outletId,
 }: IUserLoginParam): Promise<IDAOResponse> => {
   try {
     if (!email && !phoneNumber) {
@@ -98,7 +98,7 @@ export const userLoginDAO = async ({
       };
     }
 
-    if (!subOutletId) {
+    if (!outletId) {
       return {
         status: false,
         statusCode: 400,
@@ -107,11 +107,11 @@ export const userLoginDAO = async ({
       };
     }
 
-    const user = await findUserWithinSubOutlet(
+    const user = await findUserWithinOutlet(
       {
         $or: [{ email }, { phoneNumber }],
       },
-      subOutletId
+      outletId
     );
 
     if (!user) {
@@ -133,11 +133,7 @@ export const userLoginDAO = async ({
       };
     }
 
-    const jwtPayload: IJWTPayload = setUserData(
-      user.id,
-      user.role,
-      subOutletId
-    );
+    const jwtPayload: IJWTPayload = setUserData(user.id, user.role, outletId);
 
     const token = jwt.sign(jwtPayload, secret, {
       expiresIn: "1h",
@@ -147,7 +143,7 @@ export const userLoginDAO = async ({
       status: true,
       statusCode: 200,
       message: "Authentication successful",
-      data: { jwtPayload, token },
+      data: { user: jwtPayload, token },
     };
   } catch (err) {
     return {

@@ -1,14 +1,16 @@
 import { Organization } from "../repository/models";
-import { IOrganization } from "../repository/schemas/types";
+import { IOrganization, ISuperUser } from "../repository/schemas/types";
+import { createSuperUserDAO } from ".";
 import { IDAOResponse } from "./types/dao_response_types";
 
 export const createNewOrganizationDAO = async (
-  orgParams: IOrganization
+  orgParams: IOrganization,
+  userParams: ISuperUser
 ): Promise<IDAOResponse> => {
   try {
     const existingOrganization = await Organization.findOne({
       name: orgParams.name,
-    });
+    }).exec();
 
     if (existingOrganization) {
       return {
@@ -19,13 +21,32 @@ export const createNewOrganizationDAO = async (
       };
     }
 
+    //TODO:
+    /**
+     * Return JSON response
+     * Handle all errors to reflect in error message
+     * Revert simulteneous processes. (Use transaction)
+     * Structure DAO responses to return JSON
+     * */
+
     const newOrganization = await Organization.create(orgParams);
+    if (newOrganization.errors) {
+      throw newOrganization.errors;
+    }
+    const newSuperUser = await createSuperUserDAO(
+      userParams,
+      newOrganization.id
+    );
+
+    if (!newSuperUser.status) {
+      throw new Error(newSuperUser.message);
+    }
 
     return {
       status: true,
       statusCode: 200,
       message: "Organization successfully created",
-      data: newOrganization,
+      data: { ...newOrganization.toJSON(), ...newSuperUser.data },
     };
   } catch (err) {
     return {

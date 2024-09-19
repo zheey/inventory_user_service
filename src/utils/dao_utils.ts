@@ -7,29 +7,32 @@ import { sendErrorResponse } from "./response_handlers";
 export const setUserData = (
   userId: IMongooseId,
   userRole: IUserRole,
-  subOutletId: IMongooseId
+  outletId: IMongooseId
 ) => {
   return {
     userId,
-    subOutletId,
+    outletId,
     userRole,
   };
 };
 
-export const checkPayloadAvailable = (res: Response, payload: IPayload) => {
-  if (Object.keys(payload).length === 0) {
-    return sendErrorResponse(res, {}, "Missing payload data", 400);
+export const checkPayloadAvailable = (payload: IPayload): boolean => {
+  if (!payload || Object.keys(payload).length === 0) {
+    return false;
   }
+
+  return true;
 };
 
 export const validatePayload = (
-  res: Response,
   payload: IPayload,
   validator: Joi.ObjectSchema<any>
 ) => {
   const { error } = validator.validate(payload);
 
   if (error) {
-    return sendErrorResponse(res, {}, error.message, 400);
+    return { status: false, error };
   }
+
+  return { status: true, error: null };
 };

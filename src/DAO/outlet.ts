@@ -1,13 +1,13 @@
-import { Organization, SubOutlet } from "../repository/models";
-import { ISubOutlet } from "../repository/schemas/types";
+import { Organization, Outlet } from "../repository/models";
+import { IOutlet } from "../repository/schemas/types";
 import { IDAOResponse } from "./types/dao_response_types";
 
-export const createNewSubOutletDAO = async (
-  subOutletParams: ISubOutlet
+export const createNewOutletDAO = async (
+  outletParams: IOutlet
 ): Promise<IDAOResponse> => {
   try {
     const organization = await Organization.findById({
-      id: subOutletParams.organizationId,
+      id: outletParams.organizationId,
     });
 
     if (!organization) {
@@ -19,8 +19,8 @@ export const createNewSubOutletDAO = async (
       };
     }
 
-    const existingSuboutlet = await SubOutlet.findOne({
-      name: subOutletParams.name,
+    const existingSuboutlet = await Outlet.findOne({
+      name: outletParams.name,
     });
 
     if (existingSuboutlet) {
@@ -32,14 +32,14 @@ export const createNewSubOutletDAO = async (
       };
     }
 
-    const newSuboutlet = await Organization.create(subOutletParams);
+    const newSuboutlet = await Organization.create(outletParams);
     const organizationSuboutlets = [
-      ...organization.subOutlets,
+      ...(organization.outlets || []),
       newSuboutlet.id,
     ];
     await Organization.updateOne(
       { _id: organization.id },
-      { $set: { subOutlets: organizationSuboutlets } }
+      { $set: { outlets: organizationSuboutlets } }
     );
 
     return {

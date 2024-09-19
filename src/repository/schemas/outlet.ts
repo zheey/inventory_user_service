@@ -1,9 +1,9 @@
 import Joi from "joi";
 import { Schema } from "mongoose";
-import { ISubOutlet } from "./types";
+import { IOutlet } from "./types";
 import { joiObj } from "./helper";
 
-export const SubOutletSchema = new Schema<ISubOutlet>(
+export const OutletSchema = new Schema<IOutlet>(
   {
     name: { type: String, required: true },
     address: { type: Schema.Types.ObjectId, ref: "Address" },
@@ -14,10 +14,10 @@ export const SubOutletSchema = new Schema<ISubOutlet>(
   { timestamps: true }
 );
 
-export const subOutletObj = joiObj({
+export const outletObj = joiObj({
   name: Joi.string().required(),
-  address: { type: Schema.Types.ObjectId, ref: "Address" },
+  address: Joi.string().required(),
   phoneNumber: Joi.number(),
   email: Joi.string(),
-  organizationId: { type: Schema.Types.ObjectId, ref: "Organization" },
+  organizationId: Joi.string().required(),
 });

@@ -1,4 +1,8 @@
-import { IOrganization, ISubOutlet } from "../../repository/schemas/types";
+import {
+  IOrganization,
+  IOutlet,
+  ISuperUser,
+} from "../../repository/schemas/types";
 import { IUserParam } from "./auth_types";
 
 export type IDAOResponse = {
@@ -8,4 +12,4 @@ export type IDAOResponse = {
   data: any;
 };
 
-export type IPayload = IUserParam | IOrganization | ISubOutlet;
+export type IPayload = IUserParam | IOrganization | IOutlet | ISuperUser;

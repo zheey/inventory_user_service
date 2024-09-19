@@ -1,17 +1,14 @@
 import { User } from "../repository/models";
 import { IMongooseId } from "./types/auth_types";
 
-export const findUserWithinSubOutlet = (
-  query: any,
-  subOutletId: IMongooseId
-) => {
-  const subOutletQuery = {
-    subOutletId: { $in: [subOutletId] },
+export const findUserWithinOutlet = (query: any, outletId: IMongooseId) => {
+  const outletQuery = {
+    outletId: { $in: [outletId] },
   };
 
   const fullQuery = {
     ...query,
-    ...subOutletQuery,
+    ...outletQuery,
   };
 
   return User.findOne(fullQuery);

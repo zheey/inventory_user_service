@@ -15,19 +15,14 @@ export const sendErrorResponse = async (
   statusCode?: number
 ) => {
   statusCode = !statusCode ? 400 : statusCode;
-  let responseData = { message: "", param: "" };
-  if (typeof message == "string") {
-    responseData["message"] = message;
-    message = {};
-  }
-  responseData = { ...responseData, ...message };
 
   let data: ResponseDataType = {};
   data["success"] = false;
-  data["message"] = responseData;
+  data["message"] = message;
   data["data"] = content;
 
   res.status(statusCode).json(data);
+  return;
 };
 
 export const sendSuccessResponse = async (
@@ -36,16 +31,10 @@ export const sendSuccessResponse = async (
   message: MessageType,
   statusCode?: number
 ) => {
-  let responseData = { message: "", param: "" };
-  if (typeof message == "string") {
-    responseData["message"] = message;
-    message = {};
-  }
-  responseData = { ...responseData, ...message };
-
   let data: ResponseDataType = {};
   data["success"] = true;
-  data["message"] = responseData;
+  data["message"] = message;
   data["data"] = content;
   res.status(statusCode || 200).json(data);
+  return;
 };

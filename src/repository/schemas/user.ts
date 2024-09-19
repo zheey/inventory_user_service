@@ -1,6 +1,6 @@
 import Joi from "joi";
 import { Schema } from "mongoose";
-import { IUser } from "./types";
+import { ISuperUser, IUser } from "./types";
 import { joiObj } from "./helper";
 
 export const UserSchema = new Schema<IUser>(
@@ -18,7 +18,29 @@ export const UserSchema = new Schema<IUser>(
     },
     isArchived: { type: Boolean, required: false, default: false },
     avatar: { type: String, required: false },
-    subOutlets: [{ type: Schema.Types.ObjectId, ref: "SubOutlet" }],
+    outlets: [{ type: Schema.Types.ObjectId, ref: "Outlet" }],
+  },
+  { timestamps: true }
+);
+
+export const SuperUserSchema = new Schema<ISuperUser>(
+  {
+    email: { type: String, required: true, unique: true },
+    password: { type: String },
+    role: {
+      type: String,
+      default: "SUPERADMIN",
+    },
+    secretKey: { type: String, required: true },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      unique: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
@@ -29,11 +51,20 @@ export const userObj = joiObj({
   phoneNumber: Joi.number().required(),
   email: Joi.string().trim().email({ minDomainSegments: 2 }).required(),
   password: Joi.string().required(),
-  addresses: [{ type: Schema.Types.ObjectId, ref: "Address" }],
+  addresses: Joi.array(),
   role: Joi.string()
-    .valid(["SUPERADMIN", "ADMIN", "SALES_REP", "CUSTOMER"])
+    .valid("SUPERADMIN", "ADMIN", "SALES_REP", "CUSTOMER")
     .required(),
   isArchived: Joi.boolean().default(false),
   avatar: Joi.string(),
-  subOutlets: [{ type: Schema.Types.ObjectId, ref: "SubOutlet" }],
+  outlets: Joi.array(),
+});
+
+export const superUserObj = joiObj({
+  email: Joi.string().trim().email({ minDomainSegments: 2 }).required(),
+  password: Joi.string(),
+  role: Joi.string().valid("SUPERADMIN"),
+  isVerified: Joi.boolean().default(false),
+  secretKey: Joi.string().required(),
+  organizationId: Joi.string(),
 });

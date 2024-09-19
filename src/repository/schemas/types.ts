@@ -5,6 +5,7 @@ import {
   IPhoneNumber,
   IUserRole,
 } from "../../DAO/types/auth_types";
+
 export interface IUser {
   firstName: string;
   lastName: string;
@@ -15,10 +16,19 @@ export interface IUser {
   role: IUserRole;
   isArchived?: boolean;
   avatar?: string;
-  subOutlets: Types.ObjectId[];
+  outlets?: Types.ObjectId[];
 }
 
-export interface ISubOutlet {
+export interface ISuperUser {
+  email: IEmail;
+  password?: IPassword;
+  readonly role: IUserRole;
+  secretKey: string;
+  organizationId: Types.ObjectId;
+  readonly isVerified: boolean;
+}
+
+export interface IOutlet {
   name: string;
   address: Types.ObjectId;
   phoneNumber?: IPhoneNumber;
@@ -29,7 +39,8 @@ export interface ISubOutlet {
 export interface IOrganization {
   name: string;
   logo?: string;
-  subOutlets: Types.ObjectId[];
+  createdBy: string;
+  outlets?: Types.ObjectId[];
 }
 
 export interface IAddress {

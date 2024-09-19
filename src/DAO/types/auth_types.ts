@@ -10,14 +10,14 @@ export type IPassword = string;
 export type IJWTPayload = {
   userId: IMongooseId;
   userRole: IUserRole;
-  subOutletId: IMongooseId;
+  outletId: IMongooseId;
 };
 
 export type IUserLoginParam = {
   email?: IEmail;
   phoneNumber?: IPhoneNumber;
   password: IPassword;
-  subOutletId: IMongooseId;
+  outletId: IMongooseId;
 };
 
 export type IUserParam = {
@@ -30,5 +30,5 @@ export type IUserParam = {
   role: IUserRole;
   isArchived?: boolean;
   avatar?: string;
-  subOutlets: Types.ObjectId[];
+  outlets: Types.ObjectId[];
 };
