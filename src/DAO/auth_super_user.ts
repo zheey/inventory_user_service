@@ -1,6 +1,11 @@
 import { Organization, SuperUser } from "../repository/models";
 import { ISuperUser } from "../repository/schemas/types";
-import { IMongooseId } from "./types/auth_types";
+import {
+  IEmail,
+  IJWTSuperUserPayload,
+  IMongooseId,
+  ISuperUserLoginParam,
+} from "./types/auth_types";
 import { IDAOResponse } from "./types/dao_response_types";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -36,8 +41,9 @@ export const createSuperUserDAO = async (
       throw superUser.errors;
     }
 
-    const jwtPayload: any = {
+    const jwtPayload: IJWTSuperUserPayload = {
       userId: superUser.id,
+      userRole: superUser.role,
       organizationId: superUser.organizationId,
     };
 
@@ -64,9 +70,11 @@ export const createSuperUserDAO = async (
   }
 };
 
-export const verifyOneTimeToken = async (
+export const verifySuperUser = async (
   userId: IMongooseId,
-  organizationId: IMongooseId
+  organizationId: IMongooseId,
+  secretKey: string,
+  email?: IEmail
 ) => {
   try {
     const organization = await Organization.findById({ id: organizationId });
@@ -80,7 +88,11 @@ export const verifyOneTimeToken = async (
       };
     }
 
-    const user = await SuperUser.findOne({ _id: userId, organizationId });
+    const user = await SuperUser.findOne({
+      $or: [{ email }, { _id: userId }],
+      organizationId,
+    });
+
     if (!user) {
       return {
         status: false,
@@ -90,11 +102,21 @@ export const verifyOneTimeToken = async (
       };
     }
 
+    const isSecretMatch = await bcrypt.compare(user.secretKey, secretKey);
+    if (!isSecretMatch) {
+      return {
+        status: false,
+        statusCode: 400,
+        message: "Incorrect credentials",
+        data: {},
+      };
+    }
+
     if (user.isVerified) {
       return {
         status: false,
         statusCode: 400,
-        message: "Invalid Token",
+        message: "User is verified. Cannot be done again",
         data: {},
       };
     }
@@ -122,36 +144,14 @@ export const setSuperUserPasswordDAO = async (
   password: string
 ): Promise<IDAOResponse> => {
   try {
-    const organization = await Organization.findById({ id: organizationId });
-
-    if (!organization) {
-      return {
-        status: false,
-        statusCode: 400,
-        message: "Organization doesn't exist",
-        data: {},
-      };
-    }
-
-    const user = await SuperUser.findOne({ _id: userId, organizationId });
-    if (!user) {
-      return {
-        status: false,
-        statusCode: 400,
-        message: "User doesn't exist",
-        data: {},
-      };
-    }
-
-    const isMatch: any = await bcrypt.compare(secretKey, user.secretKey);
-
-    if (!isMatch) {
-      return {
-        status: false,
-        statusCode: 400,
-        message: "Incorrect credentials",
-        data: {},
-      };
+    const response = await verifySuperUser(
+      userId,
+      organizationId,
+      "",
+      secretKey
+    );
+    if (!response.status) {
+      return response;
     }
 
     const passwordHash: any = await bcrypt.hash(password, saltRounds);
@@ -176,4 +176,101 @@ export const setSuperUserPasswordDAO = async (
   }
 };
 
-// TODO: Generate new token after expiration
+export const generateVerificationTokenDAO = async ({
+  userId,
+  email,
+  secretKey,
+  organizationId,
+}: ISuperUserLoginParam): Promise<IDAOResponse> => {
+  try {
+    const response = await verifySuperUser(
+      userId,
+      organizationId,
+      email,
+      secretKey
+    );
+    if (!response.status) {
+      return response;
+    }
+
+    const jwtPayload: IJWTSuperUserPayload = {
+      userId,
+      userRole: "SUPERADMIN",
+      organizationId,
+    };
+
+    const token = jwt.sign(jwtPayload, secret, {
+      expiresIn: "1h",
+    });
+
+    return {
+      status: true,
+      statusCode: 200,
+      message: "Authentication successful",
+      data: { user: jwtPayload, token },
+    };
+  } catch (err) {
+    return {
+      status: false,
+      statusCode: 500,
+      message: "Server Unavailable",
+      data: {},
+    };
+  }
+};
+
+export const superUserLoginDAO = async ({
+  email,
+  secretKey,
+  password,
+  organizationId,
+}: ISuperUserLoginParam): Promise<IDAOResponse> => {
+  try {
+    const user = await SuperUser.findOne({ email, organizationId });
+
+    if (!user) {
+      return {
+        status: false,
+        statusCode: 400,
+        message: "User not found",
+        data: {},
+      };
+    }
+
+    const userPassword: any = user?.password;
+    const isPasswordMatch = await bcrypt.compare(userPassword, password);
+    const isSecretMatch = await bcrypt.compare(user.secretKey, secretKey);
+    if (!isPasswordMatch || !isSecretMatch) {
+      return {
+        status: false,
+        statusCode: 400,
+        message: "Incorrect credentials",
+        data: {},
+      };
+    }
+
+    const jwtPayload: IJWTSuperUserPayload = {
+      userId: user.id,
+      userRole: user.role,
+      organizationId,
+    };
+
+    const token = jwt.sign(jwtPayload, secret, {
+      expiresIn: "1h",
+    });
+
+    return {
+      status: true,
+      statusCode: 200,
+      message: "Authentication successful",
+      data: { user: jwtPayload, token },
+    };
+  } catch (err) {
+    return {
+      status: false,
+      statusCode: 500,
+      message: "Server Unavailable",
+      data: {},
+    };
+  }
+};

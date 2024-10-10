@@ -10,7 +10,6 @@ import {
 } from "./types/auth_types";
 import { IDAOResponse } from "./types/dao_response_types";
 import { findUserWithinOutlet } from "./helper";
-import { userObj } from "../repository/schemas/user";
 
 const secret: any = process.env.AUTH_SECRET;
 const saltRounds: any = process.env.SALT_ROUNDS;

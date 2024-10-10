@@ -13,6 +13,12 @@ export type IJWTPayload = {
   outletId: IMongooseId;
 };
 
+export type IJWTSuperUserPayload = {
+  userId: IMongooseId;
+  userRole: IUserRole;
+  organizationId: IMongooseId;
+};
+
 export type IUserLoginParam = {
   email?: IEmail;
   phoneNumber?: IPhoneNumber;
@@ -31,4 +37,12 @@ export type IUserParam = {
   isArchived?: boolean;
   avatar?: string;
   outlets: Types.ObjectId[];
+};
+
+export type ISuperUserLoginParam = {
+  userId: IMongooseId;
+  email: IEmail;
+  password: IPassword;
+  secretKey: string;
+  organizationId: IMongooseId;
 };

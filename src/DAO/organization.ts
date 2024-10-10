@@ -8,9 +8,16 @@ export const createNewOrganizationDAO = async (
   userParams: ISuperUser
 ): Promise<IDAOResponse> => {
   try {
-    const existingOrganization = await Organization.findOne({
-      name: orgParams.name,
-    }).exec();
+    const existingOrganization = await Organization.findOne(
+      {
+        name: orgParams.name,
+      },
+      { new: true }
+    ).exec();
+
+    if (existingOrganization?.errors) {
+      throw existingOrganization?.errors;
+    }
 
     if (existingOrganization) {
       return {
@@ -30,7 +37,7 @@ export const createNewOrganizationDAO = async (
      * */
 
     const newOrganization = await Organization.create(orgParams);
-    if (newOrganization.errors) {
+    if (newOrganization?.errors) {
       throw newOrganization.errors;
     }
     const newSuperUser = await createSuperUserDAO(
