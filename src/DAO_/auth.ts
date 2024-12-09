@@ -9,7 +9,7 @@ import {
   IUserParam,
 } from "./types/auth_types";
 import { IDAOResponse } from "./types/dao_response_types";
-import { findUserWithinOutlet } from "./helper";
+import { daoErrorHandler, findUserWithinOutlet } from "./helper";
 
 const secret: any = process.env.AUTH_SECRET;
 const saltRounds: any = process.env.SALT_ROUNDS;
@@ -28,6 +28,8 @@ export const createrNewUserDAO = async (
       },
       outletId
     );
+    daoErrorHandler(existingUser?.errors);
+
     if (existingUser) {
       return {
         status: false,
@@ -42,6 +44,8 @@ export const createrNewUserDAO = async (
 
     const outlet = await Outlet.findById({ id: outletId });
 
+    daoErrorHandler(outlet?.errors);
+
     if (!outlet) {
       return {
         status: false,
@@ -54,6 +58,8 @@ export const createrNewUserDAO = async (
     userParams["outlets"] = [outlet.id];
 
     const newUser = await User.create(userParams);
+
+    daoErrorHandler(newUser?.errors);
 
     const jwtPayload: IJWTPayload = setUserData(
       newUser.id,
@@ -112,6 +118,8 @@ export const userLoginDAO = async ({
       },
       outletId
     );
+
+    daoErrorHandler(user?.errors);
 
     if (!user) {
       return {

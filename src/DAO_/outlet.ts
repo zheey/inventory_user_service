@@ -1,5 +1,6 @@
 import { Organization, Outlet } from "../repository/models";
 import { IOutlet } from "../repository/schemas/types";
+import { daoErrorHandler } from "./helper";
 import { IDAOResponse } from "./types/dao_response_types";
 
 export const createNewOutletDAO = async (
@@ -9,6 +10,8 @@ export const createNewOutletDAO = async (
     const organization = await Organization.findById({
       id: outletParams.organizationId,
     });
+
+    daoErrorHandler(organization?.errors);
 
     if (!organization) {
       return {
@@ -23,6 +26,8 @@ export const createNewOutletDAO = async (
       name: outletParams.name,
     });
 
+    daoErrorHandler(existingSuboutlet?.errors);
+
     if (existingSuboutlet) {
       return {
         status: false,
@@ -33,6 +38,9 @@ export const createNewOutletDAO = async (
     }
 
     const newSuboutlet = await Organization.create(outletParams);
+
+    daoErrorHandler(newSuboutlet?.errors);
+
     const organizationSuboutlets = [
       ...(organization.outlets || []),
       newSuboutlet.id,

@@ -5,6 +5,8 @@ import userRoutes from "./users";
 import organizationRoutes from "./organization";
 import outletRoutes from "./outlet";
 
+import "../middlewares/passport";
+
 export default function (app: Express) {
   app.use("/auth", authRoutes);
   app.use("/user", userRoutes);

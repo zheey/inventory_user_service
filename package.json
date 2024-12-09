@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node ./bin/www.ts",
-    "dev": " nodemon ./bin/www.ts"
+    "dev": " nodemon  ./bin/www.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -40,6 +40,6 @@
     "@types/node": "^22.5.5",
     "nodemon": "^3.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.2"
+    "typescript": "^5.7.2"
   }
 }
