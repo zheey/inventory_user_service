@@ -4,7 +4,7 @@ import {
   IPassword,
   IPhoneNumber,
   IUserRole,
-} from "../../dao/types/auth_types";
+} from "../../DAO_/types/auth_types";
 
 export interface IUser {
   firstName: string;
@@ -39,7 +39,7 @@ export interface IOutlet {
 export interface IOrganization {
   name: string;
   logo?: string;
-  createdBy: string;
+  createdByEmail: string;
   outlets?: Types.ObjectId[];
 }
 

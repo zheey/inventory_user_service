@@ -1,14 +1,16 @@
 import { Organization, SuperUser } from "../repository/models";
 import { ISuperUser } from "../repository/schemas/types";
+import { daoErrorHandler } from "./helper";
 import {
   IEmail,
   IJWTSuperUserPayload,
   IMongooseId,
   ISuperUserLoginParam,
 } from "./types/auth_types";
-import { IDAOResponse } from "./types/dao_response_types";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { IDAOResponse } from "./types/dao_response_types";
+import { findOneOrganizationDAO } from ".";
 
 const secret: any = process.env.AUTH_SECRET;
 const saltRounds: any = Number(process.env.SALT_ROUNDS);
@@ -18,15 +20,13 @@ export const createSuperUserDAO = async (
   organizationId: IMongooseId
 ): Promise<IDAOResponse> => {
   try {
-    const organization = await Organization.findOne({
-      _id: organizationId,
-    }).exec();
+    const organization = await findOneOrganizationDAO(organizationId);
 
-    if (!organization) {
+    if (!organization.status) {
       return {
         status: false,
         statusCode: 400,
-        message: "Organization doesn't exist",
+        message: organization.message,
         data: {},
       };
     }
@@ -34,12 +34,10 @@ export const createSuperUserDAO = async (
     const secretHash: any = await bcrypt.hash(userParams.secretKey, saltRounds);
 
     userParams.secretKey = secretHash;
-    userParams.organizationId = organization.id;
+    userParams.organizationId = organization.data?.id;
 
     const superUser = await SuperUser.create(userParams);
-    if (superUser.errors) {
-      throw superUser.errors;
-    }
+    daoErrorHandler(superUser?.errors);
 
     const jwtPayload: IJWTSuperUserPayload = {
       userId: superUser.id,
@@ -60,7 +58,6 @@ export const createSuperUserDAO = async (
       data: { user: jwtPayload, token },
     };
   } catch (err) {
-    console.error(err);
     return {
       status: false,
       statusCode: 500,
@@ -77,7 +74,8 @@ export const verifySuperUser = async (
   email?: IEmail
 ) => {
   try {
-    const organization = await Organization.findById({ id: organizationId });
+    const organization = await Organization.findById({ _id: organizationId });
+    daoErrorHandler(organization?.errors);
 
     if (!organization) {
       return {
@@ -89,9 +87,10 @@ export const verifySuperUser = async (
     }
 
     const user = await SuperUser.findOne({
-      $or: [{ email }, { _id: userId }],
+      $or: [{ _id: userId }, { email }],
       organizationId,
     });
+    daoErrorHandler(user?.errors);
 
     if (!user) {
       return {
@@ -102,7 +101,7 @@ export const verifySuperUser = async (
       };
     }
 
-    const isSecretMatch = await bcrypt.compare(user.secretKey, secretKey);
+    const isSecretMatch = await bcrypt.compare(secretKey, user.secretKey);
     if (!isSecretMatch) {
       return {
         status: false,
@@ -124,7 +123,7 @@ export const verifySuperUser = async (
     return {
       status: true,
       statusCode: 200,
-      message: "Password not set",
+      message: "Password needs to be set",
       data: {},
     };
   } catch (err) {
@@ -132,7 +131,7 @@ export const verifySuperUser = async (
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: {},
+      data: err,
     };
   }
 };
@@ -147,8 +146,8 @@ export const setSuperUserPasswordDAO = async (
     const response = await verifySuperUser(
       userId,
       organizationId,
-      "",
-      secretKey
+      secretKey,
+      ""
     );
     if (!response.status) {
       return response;
@@ -157,7 +156,7 @@ export const setSuperUserPasswordDAO = async (
     const passwordHash: any = await bcrypt.hash(password, saltRounds);
     await SuperUser.updateOne(
       { _id: userId, organizationId },
-      { $set: { password: passwordHash } }
+      { $set: { password: passwordHash, isVerified: true } }
     );
 
     return {
@@ -181,13 +180,13 @@ export const generateVerificationTokenDAO = async ({
   email,
   secretKey,
   organizationId,
-}: ISuperUserLoginParam): Promise<IDAOResponse> => {
+}: Omit<ISuperUserLoginParam, "password">): Promise<IDAOResponse> => {
   try {
     const response = await verifySuperUser(
       userId,
       organizationId,
-      email,
-      secretKey
+      secretKey,
+      email
     );
     if (!response.status) {
       return response;
@@ -202,6 +201,8 @@ export const generateVerificationTokenDAO = async ({
     const token = jwt.sign(jwtPayload, secret, {
       expiresIn: "1h",
     });
+
+    //TODO: Email super-user token for password reset
 
     return {
       status: true,
@@ -224,9 +225,10 @@ export const superUserLoginDAO = async ({
   secretKey,
   password,
   organizationId,
-}: ISuperUserLoginParam): Promise<IDAOResponse> => {
+}: Omit<ISuperUserLoginParam, "userId">): Promise<IDAOResponse> => {
   try {
     const user = await SuperUser.findOne({ email, organizationId });
+    daoErrorHandler(user?.errors);
 
     if (!user) {
       return {
@@ -238,8 +240,8 @@ export const superUserLoginDAO = async ({
     }
 
     const userPassword: any = user?.password;
-    const isPasswordMatch = await bcrypt.compare(userPassword, password);
-    const isSecretMatch = await bcrypt.compare(user.secretKey, secretKey);
+    const isPasswordMatch = await bcrypt.compare(password, userPassword);
+    const isSecretMatch = await bcrypt.compare(secretKey, user.secretKey);
     if (!isPasswordMatch || !isSecretMatch) {
       return {
         status: false,

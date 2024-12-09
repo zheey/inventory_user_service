@@ -1,8 +1,6 @@
 import Joi from "joi";
-import { Response } from "express";
-import { IMongooseId, IUserRole } from "../dao/types/auth_types";
-import { IPayload } from "../dao/types/dao_response_types";
-import { sendErrorResponse } from "./response_handlers";
+import { IMongooseId, IUserRole } from "../DAO_/types/auth_types";
+import { IPayload } from "../DAO_/types/dao_response_types";
 
 export const setUserData = (
   userId: IMongooseId,

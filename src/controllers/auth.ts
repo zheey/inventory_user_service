@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createrNewUserDAO, userLoginDAO } from "../dao";
+import { createrNewUserDAO, userLoginDAO } from "../DAO_";
 import {
   sendErrorResponse,
   sendSuccessResponse,

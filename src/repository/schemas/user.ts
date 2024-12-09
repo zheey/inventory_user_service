@@ -36,6 +36,7 @@ export const SuperUserSchema = new Schema<ISuperUser>(
       type: Schema.Types.ObjectId,
       ref: "Organization",
       unique: true,
+      required: true,
     },
     isVerified: {
       type: Boolean,

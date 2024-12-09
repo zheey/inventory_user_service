@@ -13,3 +13,9 @@ export const findUserWithinOutlet = (query: any, outletId: IMongooseId) => {
 
   return User.findOne(fullQuery);
 };
+
+export const daoErrorHandler = (errors: any) => {
+  if (errors) {
+    throw errors;
+  }
+};
