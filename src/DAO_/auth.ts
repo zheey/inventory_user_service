@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { Organization, Outlet, SuperUser, User } from "../repository/models";
+import { Outlet, User } from "../repository/models";
 import bcrypt from "bcrypt";
 import { setUserData } from "../utils/dao_utils";
 import {
@@ -8,7 +8,7 @@ import {
   IUserLoginParam,
   IUserParam,
 } from "./types/auth_types";
-import { IDAOResponse } from "./types/dao_response_types";
+import { IDAOErrorResponse, IDAOResponse } from "./types/dao_response_types";
 import { daoErrorHandler, findUserWithinOutlet } from "./helper";
 
 const secret: any = process.env.AUTH_SECRET;
@@ -17,7 +17,7 @@ const saltRounds: any = process.env.SALT_ROUNDS;
 export const createrNewUserDAO = async (
   userParams: IUserParam,
   outletId: IMongooseId
-): Promise<IDAOResponse> => {
+): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
     const existingUser = await findUserWithinOutlet(
       {
@@ -82,7 +82,7 @@ export const createrNewUserDAO = async (
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: {},
+      error: err,
     };
   }
 };
@@ -92,7 +92,7 @@ export const userLoginDAO = async ({
   phoneNumber,
   password,
   outletId,
-}: IUserLoginParam): Promise<IDAOResponse> => {
+}: IUserLoginParam): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
     if (!email && !phoneNumber) {
       return {
@@ -157,7 +157,7 @@ export const userLoginDAO = async ({
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: {},
+      error: err,
     };
   }
 };

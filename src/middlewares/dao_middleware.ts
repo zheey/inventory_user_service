@@ -5,6 +5,7 @@ import Joi from "joi";
 import { IOrganization, ISuperUser } from "../repository/schemas/types";
 import { organizationObj } from "../repository/schemas/organization";
 import { superUserObj } from "../repository/schemas/user";
+import { IDAOErrorResponse, IDAOResponse } from "../DAO_/types";
 
 export const validateBodyPayload = (validationObj: Joi.ObjectSchema<any>) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -59,4 +60,16 @@ export const validateOrganizatioPayload = (
   }
 
   next();
+};
+
+export const isIDAOSuccessResponse = (
+  response: any
+): response is IDAOResponse => {
+  return response?.status === true && "data" in response;
+};
+
+export const isIDAOErrorResponse = (
+  response: any
+): response is IDAOErrorResponse => {
+  return response?.status === false && "error" in response;
 };

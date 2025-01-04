@@ -1,11 +1,11 @@
 import { Address, Organization, Outlet } from "../repository/models";
 import { IOutlet } from "../repository/schemas/types";
 import { daoErrorHandler } from "./helper";
-import { IDAOResponse } from "./types/dao_response_types";
+import { IDAOErrorResponse, IDAOResponse } from "./types/dao_response_types";
 
 export const createNewOutletDAO = async (
   outletParams: IOutlet
-): Promise<IDAOResponse> => {
+): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
     const organization = await Organization.findById({
       _id: outletParams.organizationId,

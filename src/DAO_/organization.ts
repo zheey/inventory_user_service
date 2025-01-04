@@ -1,14 +1,15 @@
 import { Organization } from "../repository/models";
 import { IOrganization, ISuperUser } from "../repository/schemas/types";
 import { createSuperUserDAO } from ".";
-import { IDAOResponse } from "./types/dao_response_types";
+import { IDAOErrorResponse, IDAOResponse } from "./types/dao_response_types";
 import { daoErrorHandler } from "./helper";
 import { IMongooseId } from "./types/auth_types";
+import { isIDAOErrorResponse } from "../middlewares";
 
 export const createNewOrganizationDAO = async (
   orgParams: Omit<IOrganization, "createdByEmail">,
   userParams: ISuperUser
-): Promise<IDAOResponse> => {
+): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
     const existingOrganization = await Organization.findOne(
       {
@@ -45,29 +46,29 @@ export const createNewOrganizationDAO = async (
       newOrganization.id
     );
 
-    if (!newSuperUser.status) {
+    if (isIDAOErrorResponse(newSuperUser)) {
       throw new Error(newSuperUser.message);
+    } else {
+      return {
+        status: true,
+        statusCode: 200,
+        message: "Organization successfully created",
+        data: { ...newOrganization.toJSON(), ...newSuperUser.data },
+      };
     }
-
-    return {
-      status: true,
-      statusCode: 200,
-      message: "Organization successfully created",
-      data: { ...newOrganization.toJSON(), ...newSuperUser.data },
-    };
   } catch (err) {
     return {
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: {},
+      error: err,
     };
   }
 };
 
 export const findOneOrganizationDAO = async (
   organizationId: IMongooseId
-): Promise<IDAOResponse> => {
+): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
     const organization = await Organization.findOne({
       _id: organizationId,
@@ -95,7 +96,7 @@ export const findOneOrganizationDAO = async (
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: {},
+      error: err,
     };
   }
 };
