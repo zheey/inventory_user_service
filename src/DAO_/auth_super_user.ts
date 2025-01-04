@@ -6,6 +6,7 @@ import {
   IJWTSuperUserPayload,
   IMongooseId,
   ISuperUserLoginParam,
+  ISuperUserVerifyParam,
 } from "./types/auth_types";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -180,7 +181,7 @@ export const generateVerificationTokenDAO = async ({
   email,
   secretKey,
   organizationId,
-}: Omit<ISuperUserLoginParam, "password">): Promise<IDAOResponse> => {
+}: Omit<ISuperUserVerifyParam, "password">): Promise<IDAOResponse> => {
   try {
     const response = await verifySuperUser(
       userId,
@@ -224,10 +225,9 @@ export const superUserLoginDAO = async ({
   email,
   secretKey,
   password,
-  organizationId,
 }: Omit<ISuperUserLoginParam, "userId">): Promise<IDAOResponse> => {
   try {
-    const user = await SuperUser.findOne({ email, organizationId });
+    const user = await SuperUser.findOne({ email });
     daoErrorHandler(user?.errors);
 
     if (!user) {
@@ -254,7 +254,7 @@ export const superUserLoginDAO = async ({
     const jwtPayload: IJWTSuperUserPayload = {
       userId: user.id,
       userRole: user.role,
-      organizationId,
+      organizationId: user.organizationId,
     };
 
     const token = jwt.sign(jwtPayload, secret, {

@@ -16,7 +16,12 @@ export const OutletSchema = new Schema<IOutlet>(
 
 export const outletObj = joiObj({
   name: Joi.string().required(),
-  address: Joi.string().required(),
+  address: Joi.object({
+    address: Joi.string().required(),
+    postalCode: Joi.string(),
+    city: Joi.string().required(),
+    country: Joi.string().required(),
+  }).required(),
   phoneNumber: Joi.number(),
   email: Joi.string(),
   organizationId: Joi.string().required(),

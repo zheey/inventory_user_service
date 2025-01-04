@@ -1,4 +1,4 @@
-import { Organization, Outlet } from "../repository/models";
+import { Address, Organization, Outlet } from "../repository/models";
 import { IOutlet } from "../repository/schemas/types";
 import { daoErrorHandler } from "./helper";
 import { IDAOResponse } from "./types/dao_response_types";
@@ -8,7 +8,7 @@ export const createNewOutletDAO = async (
 ): Promise<IDAOResponse> => {
   try {
     const organization = await Organization.findById({
-      id: outletParams.organizationId,
+      _id: outletParams.organizationId,
     });
 
     daoErrorHandler(organization?.errors);
@@ -37,8 +37,21 @@ export const createNewOutletDAO = async (
       };
     }
 
-    const newSuboutlet = await Organization.create(outletParams);
+    const suboutletAddress = await Address.create({
+      ...outletParams.address,
+      organizationId: outletParams.organizationId,
+    });
+    daoErrorHandler(suboutletAddress?.errors);
 
+    const payload = {
+      organizationId: outletParams.organizationId,
+      name: outletParams.name,
+      address: suboutletAddress.id,
+      phoneNumber: outletParams.phoneNumber,
+      email: outletParams.email,
+    };
+
+    const newSuboutlet = await Outlet.create(payload);
     daoErrorHandler(newSuboutlet?.errors);
 
     const organizationSuboutlets = [
@@ -61,7 +74,7 @@ export const createNewOutletDAO = async (
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: {},
+      data: err,
     };
   }
 };

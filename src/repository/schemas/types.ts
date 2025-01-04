@@ -48,4 +48,5 @@ export interface IAddress {
   postalCode: string;
   city: string;
   country: string;
+  organizationId: Types.ObjectId;
 }
