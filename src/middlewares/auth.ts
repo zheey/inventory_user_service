@@ -50,12 +50,12 @@ export const verifyToken = async (
 
 export const hasResource = (authorizedAction: AuthActions) => {
   return (req: VerifiedRequest, res: Response, next: NextFunction) => {
-    if (req.payload == undefined) {
+    if (req.user == undefined) {
       return sendErrorResponse(res, {}, NO_PAYLOAD_PERMISSION_DENIED, 403);
     }
 
     const requiredRoles = authorizedActions[authorizedAction];
-    let userRole = req.payload?.userRole?.toLowerCase();
+    let userRole = req.user?.userRole;
 
     if (!requiredRoles)
       return sendErrorResponse(res, [], NOT_AUTHORIZED_PERMISSION_DENIED, 403);

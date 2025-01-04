@@ -34,7 +34,6 @@ export const userSuperLogin = async (req: Request, res: Response) => {
       email,
       secretKey,
       password,
-      organizationId: req.headers["organizationId"],
     });
 
     if (status) {

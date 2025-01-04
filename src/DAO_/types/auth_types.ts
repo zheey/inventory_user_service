@@ -44,5 +44,12 @@ export type ISuperUserLoginParam = {
   email: IEmail;
   password: IPassword;
   secretKey: string;
+};
+
+export type ISuperUserVerifyParam = {
+  userId: IMongooseId;
+  email: IEmail;
+  password: IPassword;
+  secretKey: string;
   organizationId: IMongooseId;
 };

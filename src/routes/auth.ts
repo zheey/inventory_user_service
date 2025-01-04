@@ -13,24 +13,28 @@ import {
   setSuperUserPassword,
   userSuperLogin,
 } from "../controllers/auth_super_user";
-import { passportAuth } from "../middlewares/auth";
+import { hasResource, passportAuth } from "../middlewares/auth";
 const router = express.Router();
 const verifyUserToken = passportAuth();
 
-router.post("/new-user", [validateBodyPayload(userObj)], createUser);
 router.post(
-  "/login",
-  [verifyUserToken, validateBodyPayload(userLoginParamObj)],
-  userLogin
+  "/new-user",
+  [verifyUserToken, hasResource("admin"), validateBodyPayload(userObj)],
+  createUser
 );
+router.post("/login", [validateBodyPayload(userLoginParamObj)], userLogin);
 router.post(
   "/super/verification",
-  [verifyUserToken, validateBodyPayload(superUserUpdateObj)],
+  [
+    verifyUserToken,
+    hasResource("super"),
+    validateBodyPayload(superUserUpdateObj),
+  ],
   setSuperUserPassword
 );
 router.post(
   "/super/login",
-  [verifyUserToken, validateBodyPayload(superUserLoginObj)],
+  [validateBodyPayload(superUserLoginObj)],
   userSuperLogin
 );
 router.post(
