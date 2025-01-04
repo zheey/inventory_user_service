@@ -10,7 +10,7 @@ export const createUser = async (req: Request, res: Response) => {
   try {
     const response = await createrNewUserDAO(req.body, req.headers["outletId"]);
     if (isIDAOSuccessResponse(response)) {
-      const { status, statusCode, message, data } = response;
+      const { statusCode, message, data } = response;
       return sendSuccessResponse(res, data, message, statusCode);
     } else {
       const { statusCode, message, error } = response;
