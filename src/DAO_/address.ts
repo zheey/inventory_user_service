@@ -34,7 +34,7 @@ export const createNewAddressDAO = async (
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: err,
+      error: err,
     };
   }
 };

@@ -25,7 +25,7 @@ export const createNewOrganizationDAO = async (
         status: false,
         statusCode: 400,
         message: "Organization already exist",
-        data: {},
+        error: {},
       };
     }
 
@@ -81,7 +81,7 @@ export const findOneOrganizationDAO = async (
         status: false,
         statusCode: 400,
         message: "Organization doesn't exist",
-        data: {},
+        error: {},
       };
     }
 

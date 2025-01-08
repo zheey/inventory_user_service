@@ -2,8 +2,8 @@ import Joi from "joi";
 import { joiObj } from "../repository/schemas/helper";
 
 export const userLoginParamObj = joiObj({
-  phoneNumber: Joi.number().required(),
-  email: Joi.string().trim().email({ minDomainSegments: 2 }).required(),
+  phoneNumber: Joi.number(),
+  email: Joi.string().trim().email({ minDomainSegments: 2 }),
   password: Joi.string().required(),
 });
 
@@ -16,6 +16,10 @@ export const superUserLoginObj = joiObj({
 export const superUserUpdateObj = joiObj({
   password: Joi.string().required(),
   secretKey: Joi.string().required(),
+});
+
+export const userUpdateObj = joiObj({
+  password: Joi.string().required(),
 });
 
 export const superUserTokenObj = joiObj({

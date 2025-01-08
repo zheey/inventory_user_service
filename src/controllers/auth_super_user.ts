@@ -77,7 +77,6 @@ export const generateVerificationToken = async (
       return sendErrorResponse(res, error, message, statusCode);
     }
   } catch (err) {
-    console.log(err);
     return sendErrorResponse(res, {}, `Internal Error. ${err}`, 500);
   }
 };

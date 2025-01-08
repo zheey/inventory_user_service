@@ -85,5 +85,5 @@ export const isSuperUserPayload = (user: any): user is IJWTSuperUserPayload => {
 };
 
 export const isUserPayload = (user: any): user is IJWTPayload => {
-  return user?.userRole !== SUPERADMIN && "suboutletId" in user;
+  return user?.userRole !== SUPERADMIN && "outletId" in user;
 };

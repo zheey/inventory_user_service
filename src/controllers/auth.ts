@@ -1,10 +1,14 @@
 import { Request, Response } from "express";
-import { createrNewUserDAO, userLoginDAO } from "../DAO_";
+import { createrNewUserDAO, setUserPasswordDAO, userLoginDAO } from "../DAO_";
 import {
   sendErrorResponse,
   sendSuccessResponse,
 } from "../utils/response_handlers";
-import { isIDAOSuccessResponse, isSuperUserPayload } from "../middlewares";
+import {
+  isIDAOSuccessResponse,
+  isSuperUserPayload,
+  isUserPayload,
+} from "../middlewares";
 import { NOT_AUTHORIZED_PERMISSION_DENIED } from "../utils/response";
 
 export const createUser = async (req: Request, res: Response) => {
@@ -25,6 +29,25 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
+export const setUserPassword = async (req: Request, res: Response) => {
+  try {
+    if (!isUserPayload(req.user)) {
+      return sendErrorResponse(res, {}, NOT_AUTHORIZED_PERMISSION_DENIED, 403);
+    }
+    const { password } = req.body;
+    const response = await setUserPasswordDAO(req.user?.userId, password);
+    if (isIDAOSuccessResponse(response)) {
+      const { statusCode, message, data } = response;
+      return sendSuccessResponse(res, data, message, statusCode);
+    } else {
+      const { statusCode, message, error } = response;
+      sendErrorResponse(res, error, message, statusCode);
+    }
+  } catch (err) {
+    return sendErrorResponse(res, {}, `Internal Error. ${err}`, 500);
+  }
+};
+
 export const userLogin = async (req: Request, res: Response) => {
   try {
     const { email, phoneNumber, password } = req.body;
@@ -32,7 +55,6 @@ export const userLogin = async (req: Request, res: Response) => {
       email,
       phoneNumber,
       password,
-      outletId: req.headers["outletId"],
     });
 
     if (isIDAOSuccessResponse(response)) {

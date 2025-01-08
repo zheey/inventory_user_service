@@ -18,7 +18,7 @@ export interface IUser {
   isArchived?: boolean;
   isPasswordChanged?: boolean;
   avatar?: string;
-  outlets?: Types.ObjectId[];
+  outlets: Types.ObjectId[];
 }
 
 export interface ISuperUser {

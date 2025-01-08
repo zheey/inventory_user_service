@@ -13,11 +13,16 @@ import { daoErrorHandler, findUserWithinOutlet } from "./helper";
 import { IAddress } from "../repository/schemas/types";
 import { createNewAddressDAO } from "./address";
 import { isIDAOErrorResponse } from "../middlewares";
-import { checkIfOutletExist, removeDuplicateUserOutlets } from "./outlet";
-import { CREATION_SUCCESSFUL } from "../utils/response";
+import { checkIfOutletExist } from "./outlet";
+import {
+  CREATION_SUCCESSFUL,
+  PASSWORD_CHANGE_SUCCESSFUL,
+  USER_NOT_FOUND,
+  USER_VERIFICATION_ERROR,
+} from "../utils/response";
 
 const secret: any = process.env.AUTH_SECRET;
-const saltRounds: any = process.env.SALT_ROUNDS;
+const saltRounds: number = Number(process.env.SALT_ROUNDS);
 
 export const createrNewUserDAO = async (
   userParams: IUserParam,
@@ -32,13 +37,6 @@ export const createrNewUserDAO = async (
 
     let newUserOutlets: IMongooseId[] = outletResp.data;
 
-    const userOutletCheckResp = removeDuplicateUserOutlets(
-      newUserOutlets,
-      userParams.email,
-      userParams.phoneNumber
-    );
-    if (isIDAOErrorResponse(userOutletCheckResp)) return userOutletCheckResp;
-
     const hash: any = await bcrypt.hash(userParams.password, saltRounds);
     const userPayload = {
       firstName: userParams.firstName,
@@ -47,7 +45,7 @@ export const createrNewUserDAO = async (
       email: userParams.email || "",
       password: hash,
       role: userParams.role,
-      outlets: userOutletCheckResp.data,
+      outlets: newUserOutlets,
     };
     userParams.password = hash;
     userParams["outlets"] = newUserOutlets;
@@ -82,7 +80,10 @@ export const createrNewUserDAO = async (
       id: newUser.id,
       userRole: newUser.role,
       outlets: newUserOutlets,
+      address: userAddresses,
     };
+
+    //TODO: Send change password link to either email or through SMS
 
     return {
       status: true,
@@ -100,37 +101,86 @@ export const createrNewUserDAO = async (
   }
 };
 
+export const setUserPasswordDAO = async (
+  userId: IMongooseId,
+  password: string
+): Promise<IDAOResponse | IDAOErrorResponse> => {
+  try {
+    const passwordHash: any = await bcrypt.hash(password, saltRounds);
+    const user = await User.findById(userId);
+
+    if (user?.isPasswordChanged) {
+      return {
+        status: false,
+        statusCode: 400,
+        message: USER_VERIFICATION_ERROR,
+        error: {},
+      };
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { password: passwordHash, isPasswordChanged: true },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return {
+        status: false,
+        statusCode: 400,
+        message: USER_NOT_FOUND,
+        error: {},
+      };
+    }
+
+    const jwtPayload: IJWTPayload = setUserData(
+      updatedUser.id,
+      updatedUser.role,
+      updatedUser.outlets[0]
+    );
+
+    const token = jwt.sign(jwtPayload, secret, {
+      expiresIn: "1h",
+    });
+
+    return {
+      status: true,
+      statusCode: 200,
+      message: PASSWORD_CHANGE_SUCCESSFUL,
+      data: { token },
+    };
+  } catch (err) {
+    return {
+      status: false,
+      statusCode: 500,
+      message: "Server Unavailable",
+      error: err,
+    };
+  }
+};
+
+//TODO:Enforce password change
+
 export const userLoginDAO = async ({
   email,
   phoneNumber,
   password,
-  outletId,
-}: IUserLoginParam): Promise<IDAOResponse | IDAOErrorResponse> => {
+}: Omit<IUserLoginParam, "outletId">): Promise<
+  IDAOResponse | IDAOErrorResponse
+> => {
   try {
     if (!email && !phoneNumber) {
       return {
         status: false,
         statusCode: 400,
         message: "Email or Phone Number required",
-        data: {},
+        error: {},
       };
     }
 
-    if (!outletId) {
-      return {
-        status: false,
-        statusCode: 400,
-        message: "Suboutlet ID required",
-        data: {},
-      };
-    }
-
-    const user = await findUserWithinOutlet(
-      {
-        $or: [{ email }, { phoneNumber }],
-      },
-      outletId
-    );
+    const user = await User.findOne({
+      $or: [{ email }, { phoneNumber }],
+    });
 
     daoErrorHandler(user?.errors);
 
@@ -139,7 +189,7 @@ export const userLoginDAO = async ({
         status: false,
         statusCode: 400,
         message: "User not found",
-        data: {},
+        error: {},
       };
     }
 
@@ -149,11 +199,15 @@ export const userLoginDAO = async ({
         status: false,
         statusCode: 400,
         message: "Incorrect credentials",
-        data: {},
+        error: {},
       };
     }
 
-    const jwtPayload: IJWTPayload = setUserData(user.id, user.role, outletId);
+    const jwtPayload: IJWTPayload = setUserData(
+      user.id,
+      user.role,
+      user.outlets[0]
+    );
 
     const token = jwt.sign(jwtPayload, secret, {
       expiresIn: "1h",

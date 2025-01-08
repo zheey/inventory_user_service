@@ -29,7 +29,7 @@ export const createSuperUserDAO = async (
         status: false,
         statusCode: 400,
         message: organization.message,
-        data: {},
+        error: {},
       };
     } else {
       const secretHash: any = await bcrypt.hash(
@@ -87,7 +87,7 @@ export const verifySuperUser = async (
         status: false,
         statusCode: 400,
         message: "Organization doesn't exist",
-        data: {},
+        error: {},
       };
     }
 
@@ -102,7 +102,7 @@ export const verifySuperUser = async (
         status: false,
         statusCode: 400,
         message: "User doesn't exist",
-        data: {},
+        error: {},
       };
     }
 
@@ -112,7 +112,7 @@ export const verifySuperUser = async (
         status: false,
         statusCode: 400,
         message: "Incorrect credentials",
-        data: {},
+        error: {},
       };
     }
 
@@ -121,7 +121,7 @@ export const verifySuperUser = async (
         status: false,
         statusCode: 400,
         message: "User is verified. Cannot be done again",
-        data: {},
+        error: {},
       };
     }
 
@@ -243,7 +243,7 @@ export const superUserLoginDAO = async ({
         status: false,
         statusCode: 400,
         message: "User not found",
-        data: {},
+        error: {},
       };
     }
 
@@ -255,7 +255,7 @@ export const superUserLoginDAO = async ({
         status: false,
         statusCode: 400,
         message: "Incorrect credentials",
-        data: {},
+        error: {},
       };
     }
 

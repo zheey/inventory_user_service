@@ -17,7 +17,7 @@ export const createNewOutletDAO = async (
         status: false,
         statusCode: 403,
         message: NOT_AUTHORIZED_PERMISSION_DENIED,
-        data: {},
+        error: {},
       };
     }
     const organization = await Organization.findById({
@@ -31,7 +31,7 @@ export const createNewOutletDAO = async (
         status: false,
         statusCode: 400,
         message: "Organization does not exist",
-        data: {},
+        error: {},
       };
     }
 
@@ -46,7 +46,7 @@ export const createNewOutletDAO = async (
         status: false,
         statusCode: 400,
         message: "Suboutlet already exist",
-        data: {},
+        error: {},
       };
     }
 
@@ -89,7 +89,7 @@ export const createNewOutletDAO = async (
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: err,
+      error: err,
     };
   }
 };
@@ -99,7 +99,7 @@ export const checkIfOutletExist = async (
   organizationId: IMongooseId
 ): Promise<IDAOResponse | IDAOErrorResponse> => {
   const outletExists = outlets.every(async (outletId) => {
-    const outlet = await Outlet.findById({ id: outletId });
+    const outlet = await Outlet.findById({ _id: outletId });
     daoErrorHandler(outlet?.errors);
 
     if (!outlet || outlet.organizationId !== organizationId) {
@@ -114,7 +114,7 @@ export const checkIfOutletExist = async (
       status: false,
       statusCode: 400,
       message: "Organization or Outlet doesn't exist",
-      data: {},
+      error: {},
     };
   }
 
@@ -123,44 +123,5 @@ export const checkIfOutletExist = async (
     statusCode: 200,
     message: "Outlets exist in organization",
     data: outlets,
-  };
-};
-
-export const removeDuplicateUserOutlets = (
-  outlets: IMongooseId[],
-  userEmail?: IEmail,
-  userPhone?: IPhoneNumber
-) => {
-  let newUserOutlets: IMongooseId[] = [];
-  outlets.every(async (outletId) => {
-    const existingUser = await findUserWithinOutlet(
-      {
-        $or: [{ email: userEmail }, { phoneNumber: userPhone }],
-      },
-      outletId
-    );
-    daoErrorHandler(existingUser?.errors);
-
-    if (existingUser) {
-      newUserOutlets = newUserOutlets.filter(
-        (newoutletId) => newoutletId !== outletId
-      );
-    }
-  });
-
-  if (newUserOutlets.length < 1) {
-    return {
-      status: false,
-      statusCode: 400,
-      message: "User already added to outlet(s)",
-      data: {},
-    };
-  }
-
-  return {
-    status: true,
-    statusCode: 200,
-    message: "Successful",
-    data: newUserOutlets,
   };
 };
