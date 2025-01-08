@@ -1,5 +1,5 @@
 import express from "express";
-import { createUser, userLogin } from "../controllers";
+import { createUser, setUserPassword, userLogin } from "../controllers";
 import { validateBodyPayload } from "../middlewares";
 import { userObj } from "../repository/schemas/user";
 import {
@@ -7,6 +7,7 @@ import {
   superUserTokenObj,
   superUserUpdateObj,
   userLoginParamObj,
+  userUpdateObj,
 } from "../controllers/paramsValidationObj";
 import {
   generateVerificationToken,
@@ -19,8 +20,13 @@ const verifyUserToken = passportAuth();
 
 router.post(
   "/new-user",
-  [verifyUserToken, hasResource("admin"), validateBodyPayload(userObj)],
+  [verifyUserToken, hasResource("super"), validateBodyPayload(userObj)],
   createUser
+);
+router.post(
+  "/verification",
+  [verifyUserToken, hasResource("all"), validateBodyPayload(userUpdateObj)],
+  setUserPassword
 );
 router.post("/login", [validateBodyPayload(userLoginParamObj)], userLogin);
 router.post(

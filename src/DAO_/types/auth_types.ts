@@ -36,7 +36,7 @@ export type IUserParam = {
   role: IUserRole;
   isArchived?: boolean;
   avatar?: string;
-  outlets: Types.ObjectId[];
+  outlets: IMongooseId[];
 };
 
 export type ISuperUserLoginParam = {
@@ -53,3 +53,5 @@ export type ISuperUserVerifyParam = {
   secretKey: string;
   organizationId: IMongooseId;
 };
+
+export type IUserPayload = IJWTPayload | IJWTSuperUserPayload;

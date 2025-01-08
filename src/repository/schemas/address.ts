@@ -9,19 +9,25 @@ export const AddressSchema = new Schema<IAddress>(
     postalCode: { type: String, required: true },
     city: { type: String, required: true },
     country: { type: String, required: true },
-    organizationId: {
+    userId: {
       type: Schema.Types.ObjectId,
-      ref: "Organization",
-      required: true,
+      ref: "User",
+      required: false,
+    },
+    superUserId: {
+      type: Schema.Types.ObjectId,
+      ref: "SuperUser",
+      required: false,
     },
   },
   { timestamps: true }
 );
 
-export const Addressbj = joiObj({
+export const AddressObj = joiObj({
   address: Joi.string().required().trim(),
   postalCode: Joi.string().alphanum().required().trim(),
   city: Joi.string().required().trim(),
   country: Joi.string().required().trim(),
-  organizationId: Joi.string().required().trim(),
+  userId: Joi.string().trim(),
+  superUserId: Joi.string().trim(),
 });

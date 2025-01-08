@@ -36,7 +36,7 @@ passport.use(
         payload = {
           userId: user.id,
           userRole: user.role,
-          outlets: user.outlets,
+          outletId: jwt_payload.outletId,
         };
       }
       return cb(null, payload);

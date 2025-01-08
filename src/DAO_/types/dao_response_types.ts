@@ -12,4 +12,11 @@ export type IDAOResponse = {
   data: any;
 };
 
+export type IDAOErrorResponse = {
+  status: boolean;
+  statusCode: number;
+  message: string;
+  error: any;
+};
+
 export type IPayload = IUserParam | IOrganization | IOutlet | ISuperUser;

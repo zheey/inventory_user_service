@@ -10,8 +10,9 @@ import {
 } from "./types/auth_types";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { IDAOResponse } from "./types/dao_response_types";
+import { IDAOErrorResponse, IDAOResponse } from "./types/dao_response_types";
 import { findOneOrganizationDAO } from ".";
+import { isIDAOErrorResponse, isIDAOSuccessResponse } from "../middlewares";
 
 const secret: any = process.env.AUTH_SECRET;
 const saltRounds: any = Number(process.env.SALT_ROUNDS);
@@ -19,51 +20,54 @@ const saltRounds: any = Number(process.env.SALT_ROUNDS);
 export const createSuperUserDAO = async (
   userParams: ISuperUser,
   organizationId: IMongooseId
-): Promise<IDAOResponse> => {
+): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
     const organization = await findOneOrganizationDAO(organizationId);
 
-    if (!organization.status) {
+    if (isIDAOErrorResponse(organization)) {
       return {
         status: false,
         statusCode: 400,
         message: organization.message,
-        data: {},
+        error: {},
+      };
+    } else {
+      const secretHash: any = await bcrypt.hash(
+        userParams.secretKey,
+        saltRounds
+      );
+
+      userParams.secretKey = secretHash;
+      userParams.organizationId = organization.data?.id;
+
+      const superUser = await SuperUser.create(userParams);
+      daoErrorHandler(superUser?.errors);
+
+      const jwtPayload: IJWTSuperUserPayload = {
+        userId: superUser.id,
+        userRole: superUser.role,
+        organizationId: superUser.organizationId,
+      };
+
+      const token: string = jwt.sign(jwtPayload, secret, {
+        expiresIn: "1h",
+      });
+
+      //TODO: Email super-user token for password reset
+
+      return {
+        status: true,
+        statusCode: 200,
+        message: "Authentication successful",
+        data: { user: jwtPayload, token },
       };
     }
-
-    const secretHash: any = await bcrypt.hash(userParams.secretKey, saltRounds);
-
-    userParams.secretKey = secretHash;
-    userParams.organizationId = organization.data?.id;
-
-    const superUser = await SuperUser.create(userParams);
-    daoErrorHandler(superUser?.errors);
-
-    const jwtPayload: IJWTSuperUserPayload = {
-      userId: superUser.id,
-      userRole: superUser.role,
-      organizationId: superUser.organizationId,
-    };
-
-    const token: string = jwt.sign(jwtPayload, secret, {
-      expiresIn: "1h",
-    });
-
-    //TODO: Email super-user token for password reset
-
-    return {
-      status: true,
-      statusCode: 200,
-      message: "Authentication successful",
-      data: { user: jwtPayload, token },
-    };
   } catch (err) {
     return {
       status: false,
       statusCode: 500,
       message: `Server Unavailable `,
-      data: err,
+      error: err,
     };
   }
 };
@@ -73,7 +77,7 @@ export const verifySuperUser = async (
   organizationId: IMongooseId,
   secretKey: string,
   email?: IEmail
-) => {
+): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
     const organization = await Organization.findById({ _id: organizationId });
     daoErrorHandler(organization?.errors);
@@ -83,7 +87,7 @@ export const verifySuperUser = async (
         status: false,
         statusCode: 400,
         message: "Organization doesn't exist",
-        data: {},
+        error: {},
       };
     }
 
@@ -98,7 +102,7 @@ export const verifySuperUser = async (
         status: false,
         statusCode: 400,
         message: "User doesn't exist",
-        data: {},
+        error: {},
       };
     }
 
@@ -108,7 +112,7 @@ export const verifySuperUser = async (
         status: false,
         statusCode: 400,
         message: "Incorrect credentials",
-        data: {},
+        error: {},
       };
     }
 
@@ -117,7 +121,7 @@ export const verifySuperUser = async (
         status: false,
         statusCode: 400,
         message: "User is verified. Cannot be done again",
-        data: {},
+        error: {},
       };
     }
 
@@ -132,7 +136,7 @@ export const verifySuperUser = async (
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: err,
+      error: err,
     };
   }
 };
@@ -142,7 +146,7 @@ export const setSuperUserPasswordDAO = async (
   organizationId: IMongooseId,
   secretKey: string,
   password: string
-): Promise<IDAOResponse> => {
+): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
     const response = await verifySuperUser(
       userId,
@@ -171,7 +175,7 @@ export const setSuperUserPasswordDAO = async (
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: {},
+      error: err,
     };
   }
 };
@@ -181,7 +185,9 @@ export const generateVerificationTokenDAO = async ({
   email,
   secretKey,
   organizationId,
-}: Omit<ISuperUserVerifyParam, "password">): Promise<IDAOResponse> => {
+}: Omit<ISuperUserVerifyParam, "password">): Promise<
+  IDAOResponse | IDAOErrorResponse
+> => {
   try {
     const response = await verifySuperUser(
       userId,
@@ -216,7 +222,7 @@ export const generateVerificationTokenDAO = async ({
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: {},
+      error: err,
     };
   }
 };
@@ -225,7 +231,9 @@ export const superUserLoginDAO = async ({
   email,
   secretKey,
   password,
-}: Omit<ISuperUserLoginParam, "userId">): Promise<IDAOResponse> => {
+}: Omit<ISuperUserLoginParam, "userId">): Promise<
+  IDAOResponse | IDAOErrorResponse
+> => {
   try {
     const user = await SuperUser.findOne({ email });
     daoErrorHandler(user?.errors);
@@ -235,7 +243,7 @@ export const superUserLoginDAO = async ({
         status: false,
         statusCode: 400,
         message: "User not found",
-        data: {},
+        error: {},
       };
     }
 
@@ -247,7 +255,7 @@ export const superUserLoginDAO = async ({
         status: false,
         statusCode: 400,
         message: "Incorrect credentials",
-        data: {},
+        error: {},
       };
     }
 
@@ -272,7 +280,7 @@ export const superUserLoginDAO = async ({
       status: false,
       statusCode: 500,
       message: "Server Unavailable",
-      data: {},
+      error: err,
     };
   }
 };

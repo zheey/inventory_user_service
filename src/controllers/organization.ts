@@ -4,17 +4,22 @@ import {
   sendErrorResponse,
   sendSuccessResponse,
 } from "../utils/response_handlers";
+import { isIDAOSuccessResponse } from "../middlewares";
 
 export const createOrganization = async (req: Request, res: Response) => {
   try {
-    const { status, statusCode, message, data } =
-      await createNewOrganizationDAO(req.body.organization, req.body.user);
+    const response = await createNewOrganizationDAO(
+      req.body.organization,
+      req.body.user
+    );
 
-    if (status) {
+    if (isIDAOSuccessResponse(response)) {
+      const { statusCode, message, data } = response;
       return sendSuccessResponse(res, data, message, statusCode);
+    } else {
+      const { statusCode, message, error } = response;
+      return sendErrorResponse(res, error, message, statusCode);
     }
-
-    return sendErrorResponse(res, data, message, statusCode);
   } catch (err) {
     return sendErrorResponse(res, {}, `Internal Error. ${err}`, 500);
   }

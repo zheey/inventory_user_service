@@ -14,15 +14,16 @@ export const UserSchema = new Schema<IUser>(
     role: {
       type: String,
       required: true,
-      enum: ["SUPERADMIN", "ADMIN", "SALES_REP", "CUSTOMER"],
+      enum: ["SUPERADMIN", "ADMIN", "SALES_REP"],
     },
     isArchived: { type: Boolean, required: false, default: false },
+    isPasswordChanged: { type: Boolean, required: false, default: false },
     avatar: { type: String, required: false },
-    outlets: [{ type: Schema.Types.ObjectId, ref: "Outlet" }],
+    outlets: [{ type: Schema.Types.ObjectId, ref: "Outlet", required: true }],
   },
   { timestamps: true }
 );
-
+//TODO: create customer profile "CUSTOMER"
 export const SuperUserSchema = new Schema<ISuperUser>(
   {
     email: { type: String, required: true },
@@ -57,8 +58,9 @@ export const userObj = joiObj({
     .valid("SUPERADMIN", "ADMIN", "SALES_REP", "CUSTOMER")
     .required(),
   isArchived: Joi.boolean().default(false),
+  isPasswordChanged: Joi.boolean(),
   avatar: Joi.string(),
-  outlets: Joi.array(),
+  outlets: Joi.array().required(),
 });
 
 export const superUserObj = joiObj({
