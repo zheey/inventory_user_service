@@ -5,3 +5,6 @@ export const NOT_AUTHORIZED_PERMISSION_DENIED =
   "Unauthorized role. Permission denied";
 export const INTERNAL_ERROR = "Internal Error";
 export const CREATION_SUCCESSFUL = "creation successful";
+export const PASSWORD_CHANGE_SUCCESSFUL = "Password changed successful";
+export const USER_NOT_FOUND = "User doesn't exist";
+export const USER_VERIFICATION_ERROR = "User already verified";
