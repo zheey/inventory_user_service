@@ -4,3 +4,4 @@ export const NO_PAYLOAD_PERMISSION_DENIED = "Permission denied. No payload";
 export const NOT_AUTHORIZED_PERMISSION_DENIED =
   "Unauthorized role. Permission denied";
 export const INTERNAL_ERROR = "Internal Error";
+export const CREATION_SUCCESSFUL = "creation successful";

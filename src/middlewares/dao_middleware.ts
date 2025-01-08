@@ -11,6 +11,7 @@ import {
   IJWTPayload,
   IJWTSuperUserPayload,
 } from "../DAO_/types";
+import { SUPERADMIN } from "../utils/constants";
 
 export const validateBodyPayload = (validationObj: Joi.ObjectSchema<any>) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -80,9 +81,9 @@ export const isIDAOErrorResponse = (
 };
 
 export const isSuperUserPayload = (user: any): user is IJWTSuperUserPayload => {
-  return user?.userRole === "SUPERUSER" && "organizationId" in user;
+  return user?.userRole === SUPERADMIN && "organizationId" in user;
 };
 
 export const isUserPayload = (user: any): user is IJWTPayload => {
-  return user?.userRole !== "SUPERUSER" && "suboutletId" in user;
+  return user?.userRole !== SUPERADMIN && "suboutletId" in user;
 };

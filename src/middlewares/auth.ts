@@ -69,8 +69,9 @@ export const hasResource = (authorizedAction: AuthActions) => {
       if (requiredRoles.includes(userRole)) {
         return next();
       }
+    } else {
+      return sendErrorResponse(res, [], NOT_AUTHORIZED_PERMISSION_DENIED, 403);
     }
-    return sendErrorResponse(res, [], NOT_AUTHORIZED_PERMISSION_DENIED, 403);
   };
 };
 

@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { Address, Outlet, User } from "../repository/models";
+import { User } from "../repository/models";
 import bcrypt from "bcrypt";
 import { setUserData } from "../utils/dao_utils";
 import {
@@ -13,6 +13,8 @@ import { daoErrorHandler, findUserWithinOutlet } from "./helper";
 import { IAddress } from "../repository/schemas/types";
 import { createNewAddressDAO } from "./address";
 import { isIDAOErrorResponse } from "../middlewares";
+import { checkIfOutletExist, removeDuplicateUserOutlets } from "./outlet";
+import { CREATION_SUCCESSFUL } from "../utils/response";
 
 const secret: any = process.env.AUTH_SECRET;
 const saltRounds: any = process.env.SALT_ROUNDS;
@@ -22,55 +24,20 @@ export const createrNewUserDAO = async (
   organizationId: IMongooseId
 ): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
-    const outletExists = userParams.outlets.every(async (outletId) => {
-      const outlet = await Outlet.findById({ id: outletId });
-      daoErrorHandler(outlet?.errors);
+    const outletResp = await checkIfOutletExist(
+      userParams.outlets,
+      organizationId
+    );
+    if (isIDAOErrorResponse(outletResp)) return outletResp;
 
-      if (!outlet || outlet.organizationId !== organizationId) {
-        return false;
-      }
+    let newUserOutlets: IMongooseId[] = outletResp.data;
 
-      return true;
-    });
-
-    if (!outletExists) {
-      return {
-        status: false,
-        statusCode: 400,
-        message: "Organization or Outlet doesn't exist",
-        data: {},
-      };
-    }
-
-    let newUserOutlets = userParams.outlets;
-
-    userParams.outlets.every(async (outletId) => {
-      const existingUser = await findUserWithinOutlet(
-        {
-          $or: [
-            { email: userParams.email },
-            { phoneNumber: userParams.phoneNumber },
-          ],
-        },
-        outletId
-      );
-      daoErrorHandler(existingUser?.errors);
-
-      if (existingUser) {
-        newUserOutlets = newUserOutlets.filter(
-          (newoutletId) => newoutletId !== outletId
-        );
-      }
-    });
-
-    if (newUserOutlets.length < 1) {
-      return {
-        status: false,
-        statusCode: 400,
-        message: "User already added to outlet(s)",
-        data: {},
-      };
-    }
+    const userOutletCheckResp = removeDuplicateUserOutlets(
+      newUserOutlets,
+      userParams.email,
+      userParams.phoneNumber
+    );
+    if (isIDAOErrorResponse(userOutletCheckResp)) return userOutletCheckResp;
 
     const hash: any = await bcrypt.hash(userParams.password, saltRounds);
     const userPayload = {
@@ -80,10 +47,9 @@ export const createrNewUserDAO = async (
       email: userParams.email || "",
       password: hash,
       role: userParams.role,
-      outlets: newUserOutlets,
+      outlets: userOutletCheckResp.data,
     };
     userParams.password = hash;
-
     userParams["outlets"] = newUserOutlets;
 
     const newUser = await User.create(userPayload);
@@ -121,7 +87,7 @@ export const createrNewUserDAO = async (
     return {
       status: true,
       statusCode: 200,
-      message: "Authentication successful",
+      message: `User ${CREATION_SUCCESSFUL}`,
       data: { user: resp },
     };
   } catch (err) {
@@ -187,7 +153,6 @@ export const userLoginDAO = async ({
       };
     }
 
-    const outlets = user.outlets || [];
     const jwtPayload: IJWTPayload = setUserData(user.id, user.role, outletId);
 
     const token = jwt.sign(jwtPayload, secret, {

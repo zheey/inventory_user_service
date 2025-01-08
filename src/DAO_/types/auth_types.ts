@@ -36,7 +36,7 @@ export type IUserParam = {
   role: IUserRole;
   isArchived?: boolean;
   avatar?: string;
-  outlets: Types.ObjectId[];
+  outlets: IMongooseId[];
 };
 
 export type ISuperUserLoginParam = {

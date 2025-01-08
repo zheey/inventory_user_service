@@ -3,8 +3,8 @@ import { Address, Organization, Outlet } from "../repository/models";
 import { IOutlet } from "../repository/schemas/types";
 import { NOT_AUTHORIZED_PERMISSION_DENIED } from "../utils/response";
 import { createNewAddressDAO } from "./address";
-import { daoErrorHandler } from "./helper";
-import { IUserPayload } from "./types";
+import { daoErrorHandler, findUserWithinOutlet } from "./helper";
+import { IEmail, IMongooseId, IPhoneNumber, IUserPayload } from "./types";
 import { IDAOErrorResponse, IDAOResponse } from "./types/dao_response_types";
 
 export const createNewOutletDAO = async (
@@ -92,4 +92,75 @@ export const createNewOutletDAO = async (
       data: err,
     };
   }
+};
+
+export const checkIfOutletExist = async (
+  outlets: IMongooseId[],
+  organizationId: IMongooseId
+): Promise<IDAOResponse | IDAOErrorResponse> => {
+  const outletExists = outlets.every(async (outletId) => {
+    const outlet = await Outlet.findById({ id: outletId });
+    daoErrorHandler(outlet?.errors);
+
+    if (!outlet || outlet.organizationId !== organizationId) {
+      return false;
+    }
+
+    return true;
+  });
+
+  if (!outletExists) {
+    return {
+      status: false,
+      statusCode: 400,
+      message: "Organization or Outlet doesn't exist",
+      data: {},
+    };
+  }
+
+  return {
+    status: true,
+    statusCode: 200,
+    message: "Outlets exist in organization",
+    data: outlets,
+  };
+};
+
+export const removeDuplicateUserOutlets = (
+  outlets: IMongooseId[],
+  userEmail?: IEmail,
+  userPhone?: IPhoneNumber
+) => {
+  let newUserOutlets: IMongooseId[] = [];
+  outlets.every(async (outletId) => {
+    const existingUser = await findUserWithinOutlet(
+      {
+        $or: [{ email: userEmail }, { phoneNumber: userPhone }],
+      },
+      outletId
+    );
+    daoErrorHandler(existingUser?.errors);
+
+    if (existingUser) {
+      newUserOutlets = newUserOutlets.filter(
+        (newoutletId) => newoutletId !== outletId
+      );
+    }
+  });
+
+  if (newUserOutlets.length < 1) {
+    return {
+      status: false,
+      statusCode: 400,
+      message: "User already added to outlet(s)",
+      data: {},
+    };
+  }
+
+  return {
+    status: true,
+    statusCode: 200,
+    message: "Successful",
+    data: newUserOutlets,
+  };
 };
