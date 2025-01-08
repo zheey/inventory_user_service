@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { Outlet, User } from "../repository/models";
+import { Address, Outlet, User } from "../repository/models";
 import bcrypt from "bcrypt";
 import { setUserData } from "../utils/dao_utils";
 import {
@@ -10,43 +10,30 @@ import {
 } from "./types/auth_types";
 import { IDAOErrorResponse, IDAOResponse } from "./types/dao_response_types";
 import { daoErrorHandler, findUserWithinOutlet } from "./helper";
+import { IAddress } from "../repository/schemas/types";
+import { createNewAddressDAO } from "./address";
+import { isIDAOErrorResponse } from "../middlewares";
 
 const secret: any = process.env.AUTH_SECRET;
 const saltRounds: any = process.env.SALT_ROUNDS;
 
 export const createrNewUserDAO = async (
   userParams: IUserParam,
-  outletId: IMongooseId
+  organizationId: IMongooseId
 ): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
-    const existingUser = await findUserWithinOutlet(
-      {
-        $or: [
-          { email: userParams.email },
-          { phoneNumber: userParams.phoneNumber },
-        ],
-      },
-      outletId
-    );
-    daoErrorHandler(existingUser?.errors);
+    const outletExists = userParams.outlets.every(async (outletId) => {
+      const outlet = await Outlet.findById({ id: outletId });
+      daoErrorHandler(outlet?.errors);
 
-    if (existingUser) {
-      return {
-        status: false,
-        statusCode: 400,
-        message: "Duplicate Email or Phone Number",
-        data: {},
-      };
-    }
+      if (!outlet || outlet.organizationId !== organizationId) {
+        return false;
+      }
 
-    const hash: any = await bcrypt.hash(userParams.password, saltRounds);
-    userParams.password = hash;
+      return true;
+    });
 
-    const outlet = await Outlet.findById({ id: outletId });
-
-    daoErrorHandler(outlet?.errors);
-
-    if (!outlet) {
+    if (!outletExists) {
       return {
         status: false,
         statusCode: 400,
@@ -55,27 +42,87 @@ export const createrNewUserDAO = async (
       };
     }
 
-    userParams["outlets"] = [outlet.id];
+    let newUserOutlets = userParams.outlets;
 
-    const newUser = await User.create(userParams);
+    userParams.outlets.every(async (outletId) => {
+      const existingUser = await findUserWithinOutlet(
+        {
+          $or: [
+            { email: userParams.email },
+            { phoneNumber: userParams.phoneNumber },
+          ],
+        },
+        outletId
+      );
+      daoErrorHandler(existingUser?.errors);
 
+      if (existingUser) {
+        newUserOutlets = newUserOutlets.filter(
+          (newoutletId) => newoutletId !== outletId
+        );
+      }
+    });
+
+    if (newUserOutlets.length < 1) {
+      return {
+        status: false,
+        statusCode: 400,
+        message: "User already added to outlet(s)",
+        data: {},
+      };
+    }
+
+    const hash: any = await bcrypt.hash(userParams.password, saltRounds);
+    const userPayload = {
+      firstName: userParams.firstName,
+      lastName: userParams.lastName,
+      phoneNumber: userParams.phoneNumber || "",
+      email: userParams.email || "",
+      password: hash,
+      role: userParams.role,
+      outlets: newUserOutlets,
+    };
+    userParams.password = hash;
+
+    userParams["outlets"] = newUserOutlets;
+
+    const newUser = await User.create(userPayload);
     daoErrorHandler(newUser?.errors);
 
-    const jwtPayload: IJWTPayload = setUserData(
-      newUser.id,
-      newUser.role,
-      outletId
-    );
+    let userAddresses: IAddress[] = [];
+    if (userParams.addresses) {
+      for (let address of userParams.addresses) {
+        const newAddress = await createNewAddressDAO(address, {
+          userId: newUser.id,
+          userRole: newUser.role,
+          outletId: newUserOutlets[0],
+        });
+        if (isIDAOErrorResponse(newAddress)) {
+          return newAddress;
+        }
 
-    const token: string = jwt.sign(jwtPayload, secret, {
-      expiresIn: "1h",
-    });
+        userAddresses.push(newAddress.data.id);
+      }
+    }
+
+    if (userAddresses.length > 0) {
+      await User.updateOne(
+        { _id: newUser.id },
+        { $set: { addresses: userAddresses } }
+      );
+    }
+
+    const resp = {
+      id: newUser.id,
+      userRole: newUser.role,
+      outlets: newUserOutlets,
+    };
 
     return {
       status: true,
       statusCode: 200,
       message: "Authentication successful",
-      data: { user: jwtPayload, token },
+      data: { user: resp },
     };
   } catch (err) {
     return {
@@ -140,6 +187,7 @@ export const userLoginDAO = async ({
       };
     }
 
+    const outlets = user.outlets || [];
     const jwtPayload: IJWTPayload = setUserData(user.id, user.role, outletId);
 
     const token = jwt.sign(jwtPayload, secret, {

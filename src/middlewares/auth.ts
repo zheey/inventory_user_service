@@ -10,6 +10,7 @@ import {
   NOT_AUTHORIZED_PERMISSION_DENIED,
 } from "../utils/response";
 import { AuthActions, authorizedActions } from "../types/authorization";
+import { IUserPayload } from "../DAO_/types";
 const passport = require("passport");
 const JwtStrategy = require("passport-jwt").Strategy;
 const ExtractJwt = require("passport-jwt").ExtractJwt;
@@ -29,7 +30,7 @@ export const verifyToken = async (
 ): Promise<void> => {
   try {
     return passport.use(
-      new JwtStrategy(opts, async function (jwt_payload: JwtPayload) {
+      new JwtStrategy(opts, async function (jwt_payload: IUserPayload) {
         const user = await SuperUser.findOne({ id: jwt_payload.userId });
 
         if (!user) {

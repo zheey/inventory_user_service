@@ -17,6 +17,7 @@ export const UserSchema = new Schema<IUser>(
       enum: ["SUPERADMIN", "ADMIN", "SALES_REP", "CUSTOMER"],
     },
     isArchived: { type: Boolean, required: false, default: false },
+    isPasswordChanged: { type: Boolean, required: false, default: false },
     avatar: { type: String, required: false },
     outlets: [{ type: Schema.Types.ObjectId, ref: "Outlet" }],
   },
@@ -57,6 +58,7 @@ export const userObj = joiObj({
     .valid("SUPERADMIN", "ADMIN", "SALES_REP", "CUSTOMER")
     .required(),
   isArchived: Joi.boolean().default(false),
+  isPasswordChanged: Joi.boolean(),
   avatar: Joi.string(),
   outlets: Joi.array(),
 });

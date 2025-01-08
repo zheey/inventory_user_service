@@ -53,3 +53,5 @@ export type ISuperUserVerifyParam = {
   secretKey: string;
   organizationId: IMongooseId;
 };
+
+export type IUserPayload = IJWTPayload | IJWTSuperUserPayload;

@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import {
   IEmail,
+  IMongooseId,
   IPassword,
   IPhoneNumber,
   IUserRole,
@@ -15,6 +16,7 @@ export interface IUser {
   addresses?: IAddress[];
   role: IUserRole;
   isArchived?: boolean;
+  isPasswordChanged?: boolean;
   avatar?: string;
   outlets?: Types.ObjectId[];
 }
@@ -30,7 +32,7 @@ export interface ISuperUser {
 
 export interface IOutlet {
   name: string;
-  address: Types.ObjectId;
+  address: IAddress;
   phoneNumber?: IPhoneNumber;
   email?: IEmail;
   organizationId: Types.ObjectId;
@@ -48,5 +50,6 @@ export interface IAddress {
   postalCode: string;
   city: string;
   country: string;
-  organizationId: Types.ObjectId;
+  userId?: IMongooseId;
+  superUserId?: IMongooseId;
 }

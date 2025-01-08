@@ -4,11 +4,15 @@ import {
   sendErrorResponse,
   sendSuccessResponse,
 } from "../utils/response_handlers";
-import { isIDAOSuccessResponse } from "../middlewares";
+import { isIDAOSuccessResponse, isSuperUserPayload } from "../middlewares";
+import { NOT_AUTHORIZED_PERMISSION_DENIED } from "../utils/response";
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const response = await createrNewUserDAO(req.body, req.headers["outletId"]);
+    if (!isSuperUserPayload(req.user)) {
+      return sendErrorResponse(res, {}, NOT_AUTHORIZED_PERMISSION_DENIED, 403);
+    }
+    const response = await createrNewUserDAO(req.body, req.user.organizationId);
     if (isIDAOSuccessResponse(response)) {
       const { statusCode, message, data } = response;
       return sendSuccessResponse(res, data, message, statusCode);

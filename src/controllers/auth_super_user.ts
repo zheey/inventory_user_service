@@ -8,10 +8,14 @@ import {
   sendErrorResponse,
   sendSuccessResponse,
 } from "../utils/response_handlers";
-import { isIDAOSuccessResponse } from "../middlewares";
+import { isIDAOSuccessResponse, isSuperUserPayload } from "../middlewares";
+import { NOT_AUTHORIZED_PERMISSION_DENIED } from "../utils/response";
 
 export const setSuperUserPassword = async (req: Request, res: Response) => {
   try {
+    if (!isSuperUserPayload(req.user)) {
+      return sendErrorResponse(res, {}, NOT_AUTHORIZED_PERMISSION_DENIED, 403);
+    }
     const { secretKey, password } = req.body;
     const response = await setSuperUserPasswordDAO(
       req.user?.userId,

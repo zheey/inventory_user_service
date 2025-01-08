@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
-import { createNewOutletDAO } from "../DAO_";
 import {
   sendErrorResponse,
   sendSuccessResponse,
 } from "../utils/response_handlers";
 import { isIDAOSuccessResponse } from "../middlewares";
+import { createNewAddressDAO } from "../DAO_/address";
 
-export const createOutlet = async (req: Request, res: Response) => {
+export const createAddress = async (req: Request, res: Response) => {
   try {
-    const response = await createNewOutletDAO(req.body, req.user);
+    const response = await createNewAddressDAO(req.body, req.user);
 
     if (isIDAOSuccessResponse(response)) {
       const { statusCode, message, data } = response;

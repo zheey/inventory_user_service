@@ -1,14 +1,27 @@
+import { isIDAOErrorResponse, isSuperUserPayload } from "../middlewares";
 import { Address, Organization, Outlet } from "../repository/models";
 import { IOutlet } from "../repository/schemas/types";
+import { NOT_AUTHORIZED_PERMISSION_DENIED } from "../utils/response";
+import { createNewAddressDAO } from "./address";
 import { daoErrorHandler } from "./helper";
+import { IUserPayload } from "./types";
 import { IDAOErrorResponse, IDAOResponse } from "./types/dao_response_types";
 
 export const createNewOutletDAO = async (
-  outletParams: IOutlet
+  outletParams: IOutlet,
+  userPayload?: IUserPayload
 ): Promise<IDAOResponse | IDAOErrorResponse> => {
   try {
+    if (!isSuperUserPayload(userPayload)) {
+      return {
+        status: false,
+        statusCode: 403,
+        message: NOT_AUTHORIZED_PERMISSION_DENIED,
+        data: {},
+      };
+    }
     const organization = await Organization.findById({
-      _id: outletParams.organizationId,
+      _id: userPayload.organizationId,
     });
 
     daoErrorHandler(organization?.errors);
@@ -37,16 +50,18 @@ export const createNewOutletDAO = async (
       };
     }
 
-    const suboutletAddress = await Address.create({
-      ...outletParams.address,
-      organizationId: outletParams.organizationId,
-    });
-    daoErrorHandler(suboutletAddress?.errors);
+    const suboutletAddress = await createNewAddressDAO(
+      outletParams.address,
+      userPayload
+    );
+    if (isIDAOErrorResponse(suboutletAddress)) {
+      return suboutletAddress;
+    }
 
     const payload = {
-      organizationId: outletParams.organizationId,
+      organizationId: userPayload.organizationId,
       name: outletParams.name,
-      address: suboutletAddress.id,
+      address: suboutletAddress.data.id,
       phoneNumber: outletParams.phoneNumber,
       email: outletParams.email,
     };
